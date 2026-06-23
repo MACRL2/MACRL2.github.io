@@ -1,0 +1,491 @@
+/* ----------------------------------------------------------------
+   Design notes: the principles this stylesheet is built on.
+   Ported from the PORTFOLIO site, adapted for an online textbook.
+   ----------------------------------------------------------------
+   Rhythm comes from a small spacing scale, not arbitrary values.
+   OKLCH tokens drive every color so light and dark stay in tune.
+   Source order follows visual order for accessible reading.
+   Accent color appears sparingly, reserved for genuine emphasis.
+   Reduced-motion preferences are honored for every transition.
+   Container width is capped to keep a calm reading measure.
+   All interactive targets keep a comfortable hit area.
+   Lining, tabular figures are used wherever numbers form a column.
+   Subtle focus rings remain visible for keyboard navigation.
+   Section labels stay deliberately quiet, lowercase, and small.
+---------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------
+   Tokens
+---------------------------------------------------------------- */
+
+:root {
+  --measure: 78ch;          /* a calm reading measure for prose */
+  --pad-x: clamp(1.25rem, 4vw, 2rem);
+  --pad-y: clamp(2.5rem, 7vw, 4.5rem);
+
+  /* Paper-warm light surface; never pure white */
+  --bg:        oklch(0.975 0.012 80);
+  --fg:        oklch(0.225 0.008 80);
+  --fg-muted:  oklch(0.500 0.012 80);
+  --fg-faint:  oklch(0.685 0.010 80);
+  --rule:      oklch(0.860 0.012 80);
+  --surface:   oklch(0.945 0.014 80);   /* faint raised panel (callouts, cards) */
+  --accent:        oklch(0.420 0.130 250);
+  --accent-strong: oklch(0.320 0.150 250);
+  color-scheme: light;
+
+  --leading: 1.7;
+  --leading-tight: 1.25;
+
+  /* System serif stack: faithful to classic faculty pages.
+     Iowan on macOS/iOS, Palatino on Windows, Georgia as floor. */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino,
+           "Hoefler Text", "Sitka Text", Cambria, ui-serif, Georgia, serif;
+  /* Monospace for code samples and inline literals. */
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code",
+          "Fira Code", Menlo, Consolas, monospace;
+}
+
+/* Dark theme is opt-in via the toggle (sets data-theme="dark" on <html>).
+   Light is the default; we deliberately do NOT follow prefers-color-scheme. */
+:root[data-theme="dark"] {
+  --bg:        oklch(0.180 0.008 80);
+  --fg:        oklch(0.920 0.006 80);
+  --fg-muted:  oklch(0.640 0.012 80);
+  --fg-faint:  oklch(0.475 0.010 80);
+  --rule:      oklch(0.310 0.012 80);
+  --surface:   oklch(0.225 0.010 80);
+  --accent:        oklch(0.780 0.120 250);
+  --accent-strong: oklch(0.880 0.120 250);
+  color-scheme: dark;
+  --leading: 1.75;
+}
+
+/* ----------------------------------------------------------------
+   Base
+---------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: var(--leading);
+  font-feature-settings: "kern", "liga", "onum";
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (max-width: 480px) {
+  html { font-size: 16px; }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--pad-y) var(--pad-x);
+  position: relative;
+}
+
+/* ----------------------------------------------------------------
+   Masthead: course/book title + theme toggle
+---------------------------------------------------------------- */
+
+.masthead {
+  margin-bottom: 2.5rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-style: italic;
+  text-transform: lowercase;
+  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+}
+
+.identity-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.masthead h1 {
+  margin: 0 0 0.2rem;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.014em;
+  line-height: var(--leading-tight);
+}
+
+.name-link {
+  color: inherit;
+  text-decoration: none;
+}
+.name-link:hover { color: var(--accent); }
+
+.tagline {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+  color: var(--fg-muted);
+}
+
+/* ----------------------------------------------------------------
+   Theme toggle: subtle sun/moon morph in the masthead corner.
+---------------------------------------------------------------- */
+
+.head-tool {
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0.3rem;
+  cursor: pointer;
+  color: var(--fg-muted);
+  text-decoration: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  transition: color 160ms ease;
+}
+
+.head-tool:hover { color: var(--fg); }
+
+.head-tool:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.theme-toggle svg {
+  grid-area: 1 / 1;
+  transition:
+    opacity 350ms ease,
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.theme-toggle .icon-sun {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+}
+.theme-toggle .icon-moon {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+:root[data-theme="dark"] .theme-toggle .icon-sun {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+:root[data-theme="dark"] .theme-toggle .icon-moon {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+}
+
+/* ----------------------------------------------------------------
+   Links
+---------------------------------------------------------------- */
+
+a {
+  color: var(--accent);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: color 120ms ease, text-decoration-thickness 120ms ease;
+}
+
+a:hover {
+  color: var(--accent-strong);
+  text-decoration-thickness: 2px;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* ----------------------------------------------------------------
+   Section labels (quiet, lowercase, italic) + back link
+---------------------------------------------------------------- */
+
+section { margin-top: 0.5rem; }
+
+section > h2 {
+  margin: 2.5rem 0 1.1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-style: italic;
+  text-transform: lowercase;
+  letter-spacing: 0;
+  color: var(--fg-muted);
+}
+
+/* Floated into the top padding so the back link never adds height above the
+   masthead: the masthead stays put when navigating between pages. */
+.backlink {
+  position: absolute;
+  top: calc(var(--pad-y) - 1.8rem);
+  left: var(--pad-x);
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+/* ----------------------------------------------------------------
+   Reading progress bar (thin accent line pinned to the top edge)
+---------------------------------------------------------------- */
+
+.progress-track {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 10;
+  background: transparent;
+  pointer-events: none;
+}
+.progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: width 80ms linear;
+}
+
+/* ----------------------------------------------------------------
+   Table of contents (home page chapter list)
+---------------------------------------------------------------- */
+
+.toc { margin: 0; padding: 0; list-style: none; }
+
+.toc-part {
+  margin: 2rem 0 0.75rem;
+  font-size: 0.8rem;
+  font-style: italic;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  color: var(--fg-faint);
+}
+
+.toc-item {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  column-gap: 1rem;
+  align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.toc-num {
+  color: var(--fg-faint);
+  font-size: 0.95rem;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.toc-link {
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 1.1rem;
+}
+.toc-link:hover { color: var(--accent); text-decoration: underline; }
+
+.toc-summary {
+  margin: 0.15rem 0 0;
+  font-size: 0.92rem;
+  color: var(--fg-muted);
+}
+
+/* ----------------------------------------------------------------
+   Prose: chapter body rendered from Markdown
+---------------------------------------------------------------- */
+
+.page-content { font-size: 1.0625rem; }
+.page-content > :first-child { margin-top: 0; }
+.page-content p { margin: 0 0 1rem; }
+
+.page-content h1,
+.page-content h2,
+.page-content h3 {
+  margin: 1.9rem 0 0.6rem;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  line-height: var(--leading-tight);
+  color: var(--fg);
+}
+
+.page-content h1 { font-size: 1.5rem; }
+.page-content h2 { font-size: 1.25rem; }
+.page-content h3 { font-size: 1.08rem; }
+
+.page-content ul,
+.page-content ol {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+.page-content li { margin-bottom: 0.35rem; }
+
+.page-content blockquote {
+  margin: 0 0 1rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--rule);
+  color: var(--fg-muted);
+}
+
+.page-content hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2rem 0;
+}
+
+.page-content img { max-width: 100%; height: auto; border-radius: 3px; }
+
+/* Code */
+.page-content code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--surface);
+  padding: 0.12em 0.36em;
+  border-radius: 4px;
+}
+.page-content pre {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  margin: 0 0 1.25rem;
+}
+.page-content pre code { background: none; padding: 0; font-size: 1em; }
+
+/* Tables */
+.page-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.25rem;
+  font-size: 0.98rem;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.page-content th,
+.page-content td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--rule);
+}
+.page-content th { font-size: 0.82rem; font-weight: 700; color: var(--fg-muted); }
+
+/* ----------------------------------------------------------------
+   Callout / aside: a quiet panel for notes, tips, and "try this"
+   ----------------------------------------------------------------
+   Usage in Markdown (raw HTML is allowed):
+     <aside class="callout" data-kind="try">...</aside>
+   Kinds: note (default), tip, try, warning.
+---------------------------------------------------------------- */
+
+.callout {
+  margin: 1.25rem 0;
+  padding: 0.9rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  font-size: 0.98rem;
+}
+.callout > :first-child { margin-top: 0; }
+.callout > :last-child { margin-bottom: 0; }
+
+.callout-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  font-style: italic;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+}
+
+.callout[data-kind="try"]     { border-left-color: oklch(0.55 0.13 150); }
+.callout[data-kind="warning"] { border-left-color: oklch(0.62 0.16 40); }
+.callout[data-kind="tip"]     { border-left-color: oklch(0.62 0.13 90); }
+
+/* ----------------------------------------------------------------
+   Chapter navigation (prev / next) at the foot of a page
+---------------------------------------------------------------- */
+
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.chapter-nav a {
+  flex: 1 1 0;
+  text-decoration: none;
+  color: var(--fg);
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.chapter-nav a:hover { border-color: var(--accent); color: var(--accent); }
+.chapter-nav .nav-next { text-align: right; }
+.chapter-nav .nav-dir {
+  display: block;
+  font-size: 0.72rem;
+  font-style: italic;
+  text-transform: lowercase;
+  color: var(--fg-faint);
+}
+.chapter-nav .nav-title { font-size: 1rem; }
+
+/* ----------------------------------------------------------------
+   Footer
+---------------------------------------------------------------- */
+
+.site-footer {
+  margin-top: 2.75rem;
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+.site-footer a { color: var(--fg-muted); text-decoration: none; }
+.site-footer a:hover { color: var(--accent); text-decoration: underline; }
+
+/* ----------------------------------------------------------------
+   Reduced motion
+---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

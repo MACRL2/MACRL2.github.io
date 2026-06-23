@@ -1,0 +1,48 @@
+{# A content page. The home page (index.md) renders its body then the table of
+   contents; every other page renders a back link, its body, and prev/next
+   chapter navigation. Rendered from content/<slug>.md by build.py. #}
+{% extends "_layout.html.j2" %}
+
+{% block title %}{% if page.is_home %}{{ site.title }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}{% endblock %}
+{% block description %}{{ page.description or site.description }}{% endblock %}
+
+{% block topbar %}
+  {% if not page.is_home %}<p class="backlink"><a href="/">← contents</a></p>{% endif %}
+{% endblock %}
+
+{% block content %}
+  <article class="page-content">
+{{ page.body_html }}
+  </article>
+
+  {% if page.is_home %}
+  <section class="contents">
+    <h2>contents</h2>
+    {% set ns = namespace(part=None) %}
+    <ol class="toc">
+      {% for ch in toc %}
+        {% if ch.part and ch.part != ns.part %}
+          {% set ns.part = ch.part %}
+          <li class="toc-part">{{ ch.part }}</li>
+        {% endif %}
+        <li class="toc-item">
+          <span class="toc-num">{{ "%02d"|format(ch.index) }}</span>
+          <span>
+            <a class="toc-link" href="{{ ch.url }}">{{ ch.title }}</a>
+            {% if ch.summary %}<p class="toc-summary">{{ ch.summary }}</p>{% endif %}
+          </span>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% else %}
+  <nav class="chapter-nav">
+    {% if prev_pg %}
+      <a class="nav-prev" href="{{ prev_pg.url }}"><span class="nav-dir">← previous</span><span class="nav-title">{{ prev_pg.title }}</span></a>
+    {% else %}<span></span>{% endif %}
+    {% if nxt_pg %}
+      <a class="nav-next" href="{{ nxt_pg.url }}"><span class="nav-dir">next →</span><span class="nav-title">{{ nxt_pg.title }}</span></a>
+    {% else %}<span></span>{% endif %}
+  </nav>
+  {% endif %}
+{% endblock %}

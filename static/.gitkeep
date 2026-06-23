@@ -1,0 +1,2 @@
+# Drop images, widget scripts, and other assets here. They are copied verbatim
+# into dist/static/ and served at /static/<path>.

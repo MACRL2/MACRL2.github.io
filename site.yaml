@@ -1,0 +1,21 @@
+# Site-wide configuration for the interactive textbook.
+
+# The course / book title. Shown in the masthead and used in <title>.
+title: "An Interactive Textbook"
+
+# Small lowercase line above the title (mirrors the portfolio's quiet eyebrow).
+eyebrow: "an interactive textbook"
+
+# One line under the title, in muted ink.
+tagline: "Learn by doing — concepts you uncover as you read."
+
+# Used for <meta name="description"> and link previews. Keep it short.
+description: "An online textbook with interactive elements discovered as you progress."
+
+# Footer attribution line.
+footer: "An Interactive Textbook"
+
+# Favicon pool: a random one renders as an inline-SVG emoji favicon on every
+# page load (see the head script in templates/_layout.html.j2). Emoji that
+# stay legible at ~16px work best.
+favicons: ["📖", "📐", "🧮", "🔬", "💡", "🧩", "✏️", "🧠", "⚗️", "✨"]
