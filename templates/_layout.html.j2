@@ -38,6 +38,22 @@
 </script>
 {% if page.interactive %}
 <!-- Interactive demo kit (loaded only on chapters that opt in). -->
+<link rel="stylesheet" href="/static/vendor/katex/katex.min.css">
+<script defer src="/static/vendor/katex/katex.min.js"></script>
+<script defer src="/static/vendor/katex/contrib/auto-render.min.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', function () {
+    if (window.renderMathInElement) renderMathInElement(document.body, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$',  right: '$',  display: false },
+        { left: '\\[', right: '\\]', display: true },
+        { left: '\\(', right: '\\)', display: false },
+      ],
+      throwOnError: false,
+    });
+  });
+</script>
 <script type="module" src="/static/demo-kit/kit.js?v={{ build_fp }}"></script>
 {% endif %}
 </head>
