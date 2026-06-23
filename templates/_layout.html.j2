@@ -36,6 +36,10 @@
     document.head.appendChild(link);
   })();
 </script>
+{% if page.interactive %}
+<!-- Interactive demo kit (loaded only on chapters that opt in). -->
+<script type="module" src="/static/demo-kit/kit.js?v={{ build_fp }}"></script>
+{% endif %}
 </head>
 <body>
 <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progress-bar"></div></div>
@@ -81,6 +85,7 @@
       if (dark) root.removeAttribute('data-theme');
       else root.setAttribute('data-theme', 'dark');
       try { localStorage.setItem('theme', dark ? 'light' : 'dark'); } catch (e) {}
+      window.dispatchEvent(new CustomEvent('themechange'));
       sync();
     });
   })();

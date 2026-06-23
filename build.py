@@ -110,6 +110,7 @@ def discover_pages() -> list[dict]:
                 "part": meta.get("part", ""),
                 "nav_order": meta.get("nav_order", 9999),
                 "hide_from_toc": bool(meta.get("hide_from_toc")),
+                "interactive": bool(meta.get("interactive")),
                 "body_html": Markup(_MD(body)),
                 # Directory-style clean URLs (`/slug/`) so the same links work
                 # under `python3 -m http.server` and on GitHub Pages alike.
