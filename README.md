@@ -1,5 +1,7 @@
 # Interactive Textbook
 
+**Live:** https://macrl2.github.io/
+
 A small, hand-built static site for an online textbook — ported from the
 visual style of the `~/PORTFOLIO` site (OKLCH paper-warm palette, system
 serif, light/dark theme, calm reading measure) and adapted for course
@@ -54,3 +56,14 @@ Prose here. Drop an interactive element in with raw HTML:
 ```
 
 Callout kinds: `note` (default), `tip`, `try`, `warning`.
+
+## Deployment
+
+The site is deployed to **GitHub Pages** at https://macrl2.github.io/ from the
+`MACRL2/MACRL2.github.io` repo. Every push to `main` runs
+`.github/workflows/pages.yml`, which installs the build deps, runs `build.py`,
+and publishes `dist/` via GitHub Actions (no built artifacts are committed).
+Pages is configured with **Source: GitHub Actions**. Because every asset path is
+absolute (`/styles.css`, `/static/…`), the site must be served from a domain
+root (a user/org `*.github.io` site), not a project subpath.
+
