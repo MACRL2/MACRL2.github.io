@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/styles.css">
+<div class="demo">
+  <svg viewBox="0 0 200 100" style="max-width:300px">
+    <rect x="10" y="30" width="60" height="40" fill="none" stroke="currentColor" data-tip="block A (hover me)"/>
+    <rect x="120" y="30" width="60" height="40" fill="currentColor" fill-opacity="0.2" stroke="currentColor" data-reveal="b"/>
+  </svg>
+  <p><button type="button" class="ctl-btn" data-reveal-trigger="b">reveal block B</button></p>
+</div>
+<script type="module">
+  import { Diagram } from '/static/demo-kit/diagram.js';
+  Diagram(document.querySelector('svg'));
+</script>
