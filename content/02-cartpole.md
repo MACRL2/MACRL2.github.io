@@ -62,6 +62,11 @@ a gain that is too weak, will tip the system from *stable* to *unstable*.
 
 <div class="demo" data-demo="cartpole-linearized"></div>
 
+Note that the gains are held fixed in physical units as you change the plant —
+they are *not* re-tuned for you. A controller designed for a light, short pole can
+become unstable on a heavy, long one. Re-tuning as the system changes is exactly
+the problem **adaptive control** sets out to solve, later in the book.
+
 ## Watch it balance
 
 Designing a controller is one thing; seeing it hold the pole on a knife's edge is

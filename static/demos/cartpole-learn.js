@@ -45,6 +45,8 @@ function mount(el, params, ctx) {
     { type: 'button', label: 'reset', onClick: reset },
   ], {});
   const off = Theme.onChange(() => plot.onTheme());
-  return () => off();
+  const onResize = () => plot.resize();
+  window.addEventListener('resize', onResize);
+  return () => { off(); window.removeEventListener('resize', onResize); };
 }
 window.Demos.register('cartpole-learn', mount);

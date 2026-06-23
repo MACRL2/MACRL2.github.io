@@ -33,7 +33,9 @@ function mount(el, params, ctx) {
     { type: 'slider', key: 'kth', min: 5, max: 60, step: 1, value: state.kth, label: 'θ gain', unit: '' },
   ], state, recompute);
   const off = Theme.onChange(() => plot.onTheme());
+  const onResize = () => plot.resize();
+  window.addEventListener('resize', onResize);
   recompute();
-  return () => off();
+  return () => { off(); window.removeEventListener('resize', onResize); };
 }
 window.Demos.register('cartpole-linearized', mount);
