@@ -4,102 +4,102 @@
     {
       "id": 1,
       "subject": "Task 1: Build + layout plumbing (interactive gating + theme event)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** `interactive: true` front-matter gates kit includes; theme toggle dispatches `themechange`.\n\n```json:metadata\n{\"files\": [\"build.py\", \"templates/_layout.html.j2\", \"content/_smoke-interactive.md\"], \"verifyCommand\": \"python3 build.py && grep -q 'demo-kit/kit.js' dist/_smoke-interactive/index.html && ! grep -q 'demo-kit/kit.js' dist/index.html && echo OK\", \"acceptanceCriteria\": [\"interactive:true page emits kit.js\", \"non-interactive omits it\", \"toggle dispatches themechange\"]}\n```"
     },
     {
       "id": 2,
       "subject": "Task 2: theme.js — token reader + change fan-out",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Read CSS tokens; fan out themechange.\n\n```json:metadata\n{\"files\": [\"static/demo-kit/theme.js\", \"tests/manual/theme.html\"], \"verifyCommand\": \"served manual harness\", \"acceptanceCriteria\": [\"Theme.tokens() returns 7 tokens\", \"Theme.onChange fires + returns unsubscribe\"]}\n```"
     },
     {
       "id": 3,
       "subject": "Task 3: sim.js — integrators (TDD) + Anim + CanvasDraw",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Pure integrate(euler|rk4) + Anim loop + CanvasDraw.\n\n```json:metadata\n{\"files\": [\"static/demo-kit/sim.js\", \"tests/integrate.test.mjs\"], \"verifyCommand\": \"node --test tests/integrate.test.mjs\", \"acceptanceCriteria\": [\"rk4 <1e-6 on x'=-x\", \"rk4 beats euler\", \"energy drift <1%\", \"no autoplay under reduced-motion\"]}\n```"
     },
     {
       "id": 4,
       "subject": "Task 4: linalg.js — linearize + charpoly + polyroots (TDD)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Pure linear algebra for closed-loop poles.\n\n```json:metadata\n{\"files\": [\"static/demo-kit/linalg.js\", \"tests/linalg.test.mjs\"], \"verifyCommand\": \"node --test tests/linalg.test.mjs\", \"acceptanceCriteria\": [\"linearize recovers A\", \"charpoly diag(1,2,3)\", \"polyroots {1,2,3}\"]}\n```"
     },
     {
       "id": 5,
       "subject": "Task 5: plot.js — scaling helpers (TDD) + canvas plotter",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [2],
       "description": "**Goal:** Pure scale/niceTicks + Plot canvas renderer.\n\n```json:metadata\n{\"files\": [\"static/demo-kit/plot.js\", \"tests/plot.test.mjs\", \"tests/manual/plot.html\"], \"verifyCommand\": \"node --test tests/plot.test.mjs\", \"acceptanceCriteria\": [\"scale linear\", \"niceTicks ascending spans range\", \"manual sine renders/recolors/crisp\"]}\n```"
     },
     {
       "id": 6,
       "subject": "Task 6: controls.js — sliders/toggles/buttons + styles",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Declarative control panel bound to state; .demo-controls CSS.\n\n```json:metadata\n{\"files\": [\"static/demo-kit/controls.js\", \"styles.css\", \"tests/manual/controls.html\"], \"verifyCommand\": \"served manual harness\", \"acceptanceCriteria\": [\"renders 3 controls\", \"slider updates state+readout+onChange\", \"keyboard operable\"]}\n```"
     },
     {
       "id": 7,
       "subject": "Task 7: diagram.js — SVG tooltips + progressive reveal",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Interactive inline SVG (tooltips + reveal); .demo-diagram CSS.\n\n```json:metadata\n{\"files\": [\"static/demo-kit/diagram.js\", \"styles.css\", \"tests/manual/diagram.html\"], \"verifyCommand\": \"served manual harness\", \"acceptanceCriteria\": [\"data-tip tooltip\", \"reveal-trigger toggles\", \"light/dark via tokens\"]}\n```"
     },
     {
       "id": 8,
       "subject": "Task 8: kit.js — registry + lazy mount loader + ctx",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [2, 3, 4, 5, 6, 7],
       "description": "**Goal:** Registry + IntersectionObserver lazy mount + ctx assembly.\n\n```json:metadata\n{\"files\": [\"static/demo-kit/kit.js\", \"tests/manual/kit.html\", \"static/demos/_kittest.js\"], \"verifyCommand\": \"served manual harness\", \"acceptanceCriteria\": [\"lazy-loads+mounts once near viewport\", \"ctx has 8 keys\", \"cleanup offscreen\"]}\n```"
     },
     {
       "id": 9,
       "subject": "Task 9: Vendor KaTeX + gated math init",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** Self-contained LaTeX on interactive pages (CDN+SRI fallback noted).\n\n```json:metadata\n{\"files\": [\"static/vendor/katex\", \"templates/_layout.html.j2\"], \"verifyCommand\": \"served interactive page with math\", \"acceptanceCriteria\": [\"katex vendored or fallback noted\", \"inline+display math render\"]}\n```"
     },
     {
       "id": 10,
       "subject": "Task 10: cartpole-dynamics.js — physics + controller (TDD)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3],
       "description": "**Goal:** Pure cart-pole deriv/energy + stabilizing feedback.\n\n```json:metadata\n{\"files\": [\"static/demos/cartpole-dynamics.js\", \"tests/cartpole-dynamics.test.mjs\"], \"verifyCommand\": \"node --test tests/cartpole-dynamics.test.mjs\", \"acceptanceCriteria\": [\"equilibrium at 0\", \"upright unstable\", \"feedback stabilizes 0.1 tilt over 5s\"]}\n```"
     },
     {
       "id": 11,
       "subject": "Task 11: cartpole-diagram.js — tunable diagram demo",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [7, 8],
       "description": "**Goal:** Annotated cart-pole SVG with tooltips + control-loop reveal.\n\n```json:metadata\n{\"files\": [\"static/demos/cartpole-diagram.js\"], \"verifyCommand\": \"served chapter page\", \"acceptanceCriteria\": [\"registers+mounts\", \"data-tip x/θ/F\", \"reveals control loop\"]}\n```"
     },
     {
       "id": 12,
       "subject": "Task 12: cartpole-linearized.js — interactive plot demo",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3, 4, 5, 8, 10],
       "description": "**Goal:** Sliders → step response plot + closed-loop poles.\n\n```json:metadata\n{\"files\": [\"static/demos/cartpole-linearized.js\"], \"verifyCommand\": \"served chapter page\", \"acceptanceCriteria\": [\"Plot+Controls\", \"slider re-integrates no reload\", \"4 poles; stable=>Re<0\", \"recolors\"]}\n```"
     },
     {
       "id": 13,
       "subject": "Task 13: cartpole-sim.js — live simulation demo",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3, 6, 8, 10],
       "description": "**Goal:** Animated controllable cart-pole (Anim RK4 + CanvasDraw); add Anim.redraw().\n\n```json:metadata\n{\"files\": [\"static/demos/cartpole-sim.js\", \"static/demo-kit/sim.js\"], \"verifyCommand\": \"served chapter page\", \"acceptanceCriteria\": [\"no autoplay reduced-motion\", \"on=balances off=falls\", \"nudge/reset\", \"cleanup pauses offscreen\"]}\n```"
     },
     {
       "id": 14,
       "subject": "Task 14: cartpole-learn.js — runnable algorithm demo",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3, 5, 6, 8, 10],
       "description": "**Goal:** Random-search policy improvement + live training curve.\n\n```json:metadata\n{\"files\": [\"static/demos/cartpole-learn.js\"], \"verifyCommand\": \"served chapter page\", \"acceptanceCriteria\": [\"Plot+buttons\", \"run 20 improves return\", \"reset clears; no errors\"]}\n```"
     },
     {
       "id": 15,
       "subject": "Task 15: chapter content/02-cartpole.md + integration verify",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1, 9, 11, 12, 13, 14],
       "description": "**Goal:** Author chapter threading prose+math+4 demos; verify end-to-end; remove temporaries.\n\n```json:metadata\n{\"files\": [\"content/02-cartpole.md\", \"content/01-sample-chapter.md\"], \"verifyCommand\": \"node --test tests/ && python3 build.py && grep -c 'class=\\\"demo\\\"' dist/02-cartpole/index.html\", \"acceptanceCriteria\": [\"katex+kit scripts + 4 mount points\", \"4 demos mount no console errors; math renders\", \"node --test tests/ pass\", \"manual: reduced-motion/keyboard/dark/mobile\"]}\n```"
     }
   ],
-  "lastUpdated": "2026-06-23"
+  "lastUpdated": "2026-06-23T22:00:00Z"
 }

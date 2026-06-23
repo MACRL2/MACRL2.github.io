@@ -13,3 +13,7 @@ tests/browser/
 
 # Generated chapter screenshots (regenerate via tests/browser/shot.mjs)
 cartpole-*.png
+
+# Workspace meta dirs (not part of the project)
+.xdg-config/
+.claude-memory/
