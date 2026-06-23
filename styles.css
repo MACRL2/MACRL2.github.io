@@ -489,3 +489,18 @@ section > h2 {
     scroll-behavior: auto !important;
   }
 }
+
+/* ----------------------------------------------------------------
+   Demo controls (sliders/toggles/buttons inside interactive demos)
+---------------------------------------------------------------- */
+.demo-controls { display: grid; gap: 0.5rem; margin: 0.75rem 0; }
+.demo-control { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; }
+.demo-control .ctl-label { color: var(--fg-muted); min-width: 7rem; }
+.demo-control input[type="range"] { flex: 1; accent-color: var(--accent); }
+.demo-control .ctl-out { font-variant-numeric: tabular-nums; min-width: 4.5rem; }
+.ctl-btn {
+  font: inherit; cursor: pointer; color: var(--fg);
+  background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 0.3rem 0.7rem;
+}
+.ctl-btn:hover { border-color: var(--accent); color: var(--accent); }
