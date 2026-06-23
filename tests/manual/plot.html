@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/styles.css">
+<div style="height:240px"><canvas id="c" style="width:100%;height:100%"></canvas></div>
+<button id="t">toggle theme</button>
+<script type="module">
+  import { Plot } from '/static/demo-kit/plot.js';
+  const p = Plot(document.getElementById('c'), { series:[{color:'accent'}] });
+  const xs=[], ys=[]; for(let x=0;x<=6.3;x+=0.05){xs.push(x);ys.push(Math.sin(x));}
+  p.setData(0, xs, ys).render();
+  addEventListener('resize', ()=>p.resize());
+  document.getElementById('t').onclick=()=>{const r=document.documentElement; r.setAttribute('data-theme', r.getAttribute('data-theme')==='dark'?'':'dark'); dispatchEvent(new CustomEvent('themechange')); p.onTheme();};
+</script>
