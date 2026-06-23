@@ -3,3 +3,13 @@ dist/
 __pycache__/
 *.pyc
 .DS_Store
+# Node tooling used only for local smoke tests (not a runtime dependency).
+node_modules/
+package.json
+package-lock.json
+
+# Local browser smoke scripts (need node_modules/puppeteer)
+tests/browser/
+
+# Generated chapter screenshots (regenerate via tests/browser/shot.mjs)
+cartpole-*.png

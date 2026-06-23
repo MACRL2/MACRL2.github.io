@@ -1,9 +1,10 @@
 ---
 title: A Sample Chapter
 description: Demonstrates the prose style, a callout, and a first interactive element.
-nav_order: 1
-part: "Part I — Getting Started"
+nav_order: 9
+part: "Appendix"
 summary: How a chapter reads, and what an interactive element feels like in context.
+hide_from_toc: true
 ---
 
 # A Sample Chapter

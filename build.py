@@ -153,7 +153,10 @@ def render() -> None:
     # Cache-busted stylesheet + static assets.
     (OUT_DIR / "styles.css").write_bytes(css_bytes)
     if STATIC_DIR.exists():
-        shutil.copytree(STATIC_DIR, OUT_DIR / "static", dirs_exist_ok=True)
+        # Skip dev-only fixtures (underscore-prefixed, e.g. _kittest.js) so they
+        # never ship in a production build.
+        shutil.copytree(STATIC_DIR, OUT_DIR / "static", dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns("_*"))
 
     page_tmpl = env.get_template("page.html.j2")
     for i, page in enumerate(toc):
