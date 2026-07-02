@@ -27,7 +27,7 @@ Start by getting a feel for the parts. Hover the schematic; reveal the loop.
 
 The state is four numbers: the cart position $x$, its velocity $\dot x$, the pole
 angle $\theta$ measured from straight up, and its angular velocity $\dot\theta$.
-The single input is the force $F$ on the cart. We write the state as a vector
+The single input is the force $F$ on the cart. We write the state as a complete vector
 $\mathbf{s} = [x,\ \dot x,\ \theta,\ \dot\theta]$.
 
 ## The equations, and why upright is hard
