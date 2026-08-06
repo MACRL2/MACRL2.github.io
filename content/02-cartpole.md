@@ -1,9 +1,9 @@
 ---
 title: Balancing on a Knife's Edge
-description: The cart-pole, from classical control to a policy that learns to balance — with four things to try.
-nav_order: 1
-part: "Part I — Foundations"
-summary: One small system that carries the whole arc of the book — classical control, then learning.
+description: The cart-pole, from classical control to a policy that learns to balance — Branch B in miniature, with four things to try.
+nav_order: 40
+part: "Part II — Branch B · Learning to Control"
+summary: The concrete anchor for Branch B — design a controller from a model, watch it balance, then throw the model away and let it learn.
 interactive: true
 ---
 
@@ -14,9 +14,11 @@ control. Gravity does the rest, and gravity is patient — left alone, the pole
 falls. The job is to keep it upright.
 
 This is the **cart-pole**, the hydrogen atom of control and reinforcement
-learning. It is simple enough to hold in your head and rich enough to carry the
-entire arc of this book: we will *design* a controller from a model, *watch* it
-work, and then throw the model away and let an algorithm *learn* one. Every idea
+learning, and it is [Branch B](/03-two-branches/) in miniature: unstable,
+easy to specify ("don't let it fall"), impossible to demonstrate by hand. It is
+simple enough to hold in your head and rich enough to carry the entire arc of
+this book: we will *design* a controller from a model, *watch* it work, and then
+throw the model away and let an algorithm *learn* one. Every idea
 that follows — adaptive control, reinforcement learning, transferring a policy
 from simulation to a real robot — is, at heart, a more elaborate version of
 keeping this pole from falling.

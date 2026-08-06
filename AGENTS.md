@@ -121,6 +121,16 @@ Mistune runs with `escape=False` and plugins
 `<script>` pass through untouched** (a first-class authoring tool). Jinja uses
 `StrictUndefined`, so a typo'd template variable breaks the build loudly.
 
+**Math is shielded from Markdown.** `render_markdown()` (build.py) masks every
+`$…$` and `$$…$$` span with an inert sentinel *before* Mistune runs, then restores
+the raw LaTeX in the emitted HTML. Without this, Mistune's inline parser mangles
+LaTeX: an underscore after a brace opens `<em>` (so `\mathbb{E}_{x_0}…\sum_`
+becomes `\mathbb{E}<em>{x_0}…\sum</em>`, splitting the text node so KaTeX can't
+match the `$$` delimiters and the equation renders as raw source), and
+backslash-escapes like `\,` / `\|` get eaten. Thanks to the mask you can now write
+`\,`, `\|`, `}_{`, etc. inside math freely. The masking is invisible to authors —
+just remember math still needs `interactive: true` to load KaTeX at all.
+
 ## Authoring a chapter
 
 Create `content/NN-slug.md`. The filename stem is the URL slug

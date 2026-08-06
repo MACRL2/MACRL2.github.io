@@ -65,6 +65,33 @@ _MD = mistune.create_markdown(
     plugins=["strikethrough", "table", "footnotes", "def_list"],
 )
 
+# KaTeX math is rendered client-side, so the LaTeX between $…$ / $$…$$ must reach
+# the browser byte-for-byte. But Mistune's inline parser would otherwise mangle
+# it — an underscore after a brace opens <em> (`\mathbb{E}_{x_0}…\sum_` becomes
+# `\mathbb{E}<em>{x_0}…\sum</em>`, which splits the text node so KaTeX can't match
+# the delimiters), and a backslash-escape like `\,` or `\|` gets eaten. So we mask
+# every math span with an inert alphanumeric-free sentinel BEFORE Markdown runs,
+# then restore the originals in the emitted HTML. Display ($$…$$) is masked before
+# inline ($…$) so the longer delimiter wins. Guillemets are Markdown- and
+# HTML-inert, so the sentinel survives untouched.
+_MATH_DISPLAY_RE = re.compile(r"\$\$.*?\$\$", re.DOTALL)
+_MATH_INLINE_RE = re.compile(r"\$(?:\\.|[^$\n])+?\$")
+_MATH_TOKEN_RE = re.compile(r"«MATH(\d+)»")
+
+
+def render_markdown(body: str) -> str:
+    """Markdown -> HTML with $…$/$$…$$ math passed through verbatim for KaTeX."""
+    stash: list[str] = []
+
+    def _mask(m: re.Match) -> str:
+        stash.append(m.group(0))
+        return f"«MATH{len(stash) - 1}»"
+
+    protected = _MATH_DISPLAY_RE.sub(_mask, body)
+    protected = _MATH_INLINE_RE.sub(_mask, protected)
+    html = _MD(protected)
+    return _MATH_TOKEN_RE.sub(lambda m: stash[int(m.group(1))], html)
+
 
 def _short_hash(data: bytes, n: int = 10) -> str:
     return hashlib.sha256(data).hexdigest()[:n]
@@ -111,7 +138,7 @@ def discover_pages() -> list[dict]:
                 "nav_order": meta.get("nav_order", 9999),
                 "hide_from_toc": bool(meta.get("hide_from_toc")),
                 "interactive": bool(meta.get("interactive")),
-                "body_html": Markup(_MD(body)),
+                "body_html": Markup(render_markdown(body)),
                 # Directory-style clean URLs (`/slug/`) so the same links work
                 # under `python3 -m http.server` and on GitHub Pages alike.
                 "url": "/" if slug == "index" else f"/{slug}/",
