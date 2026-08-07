@@ -6,7 +6,11 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # rohan/dm-frameworks refreshes the branch preview (see the preview steps
+    # below). Note: the trigger only fires once that branch contains this
+    # workflow file — until it merges main, refresh the preview via a push to
+    # main or workflow_dispatch.
+    branches: [main, rohan/dm-frameworks]
   workflow_dispatch:
 
 permissions:
@@ -23,7 +27,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Pin ref: main so the site root is always built from main, even when a
+      # preview-branch push triggered this run.
       - uses: actions/checkout@v7
+        with:
+          ref: main
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -31,6 +39,33 @@ jobs:
         run: pip install jinja2 pyyaml mistune markupsafe
       - name: Build site
         run: python3 build.py
+
+      # --- One-off branch preview: rohan/dm-frameworks ------------------------
+      # Serves the branch at /preview/dm-frameworks/ alongside the main site.
+      # The generated HTML/JS use root-absolute URLs, so rewrite them to the
+      # subpath post-build (keeps the branch itself untouched). Delete this
+      # block (and the branch trigger above) once the branch merges.
+      - uses: actions/checkout@v7
+        with:
+          ref: rohan/dm-frameworks
+          path: _preview
+      - name: Build branch preview
+        run: python3 build.py
+        working-directory: _preview
+      - name: Rewrite preview URLs to subpath
+        run: |
+          find _preview/dist -name '*.html' -print0 | xargs -0 sed -i \
+            -e 's|href="/|href="/preview/dm-frameworks/|g' \
+            -e 's|src="/|src="/preview/dm-frameworks/|g'
+          find _preview/dist -name '*.js' -print0 | xargs -0 sed -i \
+            -e "s|'/static/|'/preview/dm-frameworks/static/|g" \
+            -e 's|`/static/|`/preview/dm-frameworks/static/|g'
+      - name: Add preview to site
+        run: |
+          mkdir -p dist/preview
+          cp -r _preview/dist dist/preview/dm-frameworks
+      # ------------------------------------------------------------------------
+
       - name: Disable Jekyll processing
         run: touch dist/.nojekyll
       - uses: actions/upload-pages-artifact@v5
