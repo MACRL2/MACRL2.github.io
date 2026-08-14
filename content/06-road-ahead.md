@@ -39,6 +39,7 @@ section — action parameterization (steering/accel vs. trajectory vs. waypoints
 history conditioning, output distribution (regression vs. mixture vs. discretized
 vs. diffusion). Establish early that offline metrics are *only weakly predictive*
 of closed-loop performance — it motivates everything after.
+*Now live: [Cloning the Driver](/04-behavior-cloning/).*
 
 **Where it breaks — four failures, kept separate:**
 
@@ -154,7 +155,7 @@ The branching structure above expands into this sequence. Chapters marked
 | 0 | Introduction and motivation — [Why Robot Learning](/01-why-robot-learning/) | *(live)* |
 | 1 | [Notation and the (loss, distribution) framing](/02-notation-setup/) | *(live)* |
 | 2 | Statistical & online learning primer — regret as a design target | planned |
-| 3 | Branch A.1 — behavior cloning and its four failure modes | planned |
+| 3 | Branch A.1 — behavior cloning — [Cloning the Driver](/04-behavior-cloning/) | *(live)* |
 | 4 | Branch A.2 — interactive imitation; DAgger and safe variants | planned |
 | 5 | Branch A.3 — inverse RL and reward learning | planned |
 | 6 | Branch B.1 — models, trajectory optimization, MPC | planned |

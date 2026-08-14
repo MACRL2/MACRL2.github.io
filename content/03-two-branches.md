@@ -68,8 +68,11 @@ labels* — a human expert in Branch A, the world itself in Branch B.
 
 <aside class="callout" data-kind="try">
   <span class="callout-label">what breaks next</span>
-  <p>Enough overview. Pick up a real system: the <a href="/02-cartpole/">cart-pole</a>
-  runs Branch B in miniature — design a controller from a model, watch it balance,
-  then throw the model away and let it learn. After that, <a href="/06-road-ahead/">the
-  road ahead</a> lays out every chapter this branching structure expands into.</p>
+  <p>Enough overview. Pick up a real system from either branch:
+  <a href="/04-behavior-cloning/">clone a driver</a> to watch Branch A's first
+  step look perfect offline and then drift off the road, or balance the
+  <a href="/02-cartpole/">cart-pole</a> to run Branch B in miniature — design a
+  controller from a model, watch it balance, then throw the model away and let
+  it learn. After that, <a href="/06-road-ahead/">the road ahead</a> lays out
+  every chapter this branching structure expands into.</p>
 </aside>

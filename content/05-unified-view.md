@@ -17,7 +17,7 @@ dynamics on the right.
 | --- | --- | --- |
 | Hard part | objective & semantics | dynamics & stability |
 | Cheap human channel | demonstrations | reward + simulator |
-| Naive supervised step | behavior cloning | system identification |
+| Naive supervised step | [behavior cloning](/04-behavior-cloning/) | system identification |
 | What it fits | $\pi_\theta$ under $d^{\pi^\star}$ | $f_\phi$ under $d^{\pi_0}$ |
 | How it breaks | learner drifts off expert states | planner exploits model error |
 | Interactive fix | DAgger + expert labels | iterative sysID; world provides labels |
