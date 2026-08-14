@@ -7,7 +7,9 @@
    Source order follows visual order for accessible reading.
    Accent color appears sparingly, reserved for genuine emphasis.
    Reduced-motion preferences are honored for every transition.
-   Container width is capped to keep a calm reading measure.
+   Container width is capped to keep a calm reading measure;
+   type scales gently with the viewport, and interactive demos
+   may bleed wider than the prose column on large screens.
    All interactive targets keep a comfortable hit area.
    Lining, tabular figures are used wherever numbers form a column.
    Subtle focus rings remain visible for keyboard navigation.
@@ -19,7 +21,8 @@
 ---------------------------------------------------------------- */
 
 :root {
-  --measure: 78ch;          /* a calm reading measure for prose */
+  --measure: 82ch;          /* a calm reading measure for prose */
+  --demo-max: 1080px;       /* interactive demos may bleed out to this */
   --pad-x: clamp(1.25rem, 4vw, 2rem);
   --pad-y: clamp(2.5rem, 7vw, 4.5rem);
 
@@ -69,7 +72,8 @@
 
 html {
   font-family: var(--serif);
-  font-size: 17px;
+  /* Fluid type: 17px on laptops, easing up to 20px on wide desktops. */
+  font-size: clamp(17px, 14.6px + 0.33vw, 20px);
   line-height: var(--leading);
   font-feature-settings: "kern", "liga", "onum";
   -webkit-text-size-adjust: 100%;
@@ -504,6 +508,16 @@ section > h2 {
   border-radius: 6px; padding: 0.3rem 0.7rem;
 }
 .ctl-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Interactive demos can opt in (data-wide on the .demo div) to bleed wider
+   than the prose measure on large screens, so plots and sims get the room the
+   text deliberately declines. Centered on the page; collapses to the prose
+   column when the viewport is narrow. Opt-in because a demo must draw
+   aspect-aware to look right at arbitrary widths. */
+.page-content .demo[data-wide] {
+  width: min(var(--demo-max), calc(100vw - 2 * var(--pad-x)));
+  margin-inline: calc((100% - min(var(--demo-max), calc(100vw - 2 * var(--pad-x)))) / 2);
+}
 
 /* Interactive SVG diagrams */
 .demo-diagram { position: relative; }

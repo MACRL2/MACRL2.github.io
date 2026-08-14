@@ -121,7 +121,7 @@ nudge — the expert absorbs it without drama. Then notice the thing that will
 matter: driving well, it *never gets nudged on its own*. Its data shows no
 recoveries because it never needs any.
 
-<div class="demo" data-demo="bc-drive"></div>
+<div class="demo" data-demo="bc-drive" data-wide></div>
 
 ## The clone: a CNN from pixels to steering
 
@@ -178,7 +178,7 @@ is honest rather than pristine: the car starts a sliver off-center and the
 steering carries a whisper of noise — and the expert is always available to
 drive under *identical* conditions, so you can see who copes.
 
-<div class="demo" data-demo="bc-clone"></div>
+<div class="demo" data-demo="bc-clone" data-wide></div>
 
 <aside class="callout" data-kind="try">
   <span class="callout-label">run the experiment</span>

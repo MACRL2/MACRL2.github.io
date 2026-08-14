@@ -12,8 +12,8 @@ import {
 function mount(el, params, ctx) {
   const { Anim, Controls, Theme } = ctx;
   el.innerHTML = `
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start">
-      <div style="flex:1 1 300px;min-width:240px"><div style="height:300px">
+    <div style="display:flex;gap:1.25rem;flex-wrap:wrap;align-items:flex-start;justify-content:center">
+      <div style="flex:1 1 320px;min-width:250px;max-width:640px"><div style="height:340px">
         <canvas class="bc-track" style="width:100%;height:100%"></canvas>
       </div></div>
       <div style="flex:0 0 170px;display:flex;flex-direction:column;gap:.5rem">
