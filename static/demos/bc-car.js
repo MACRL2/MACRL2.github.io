@@ -144,7 +144,10 @@ export function sampleField(f, x, y) {
 
 // The policy's entire sensorium: w×h pixels covering `ahead` units in front,
 // `behind` units back, `halfSpan` to each side, car at bottom-center heading up.
-export const OBS = { w: 24, h: 24, ahead: 5.0, behind: 1.0, halfSpan: 3.0, edge: 0.25 };
+// The preview is deliberately short (3.5 units ≈ headlight range): off the
+// expert's tube the road leaves the frame quickly, which is what makes
+// off-distribution states genuinely off-distribution.
+export const OBS = { w: 24, h: 24, ahead: 3.5, behind: 0.5, halfSpan: 2.0, edge: 0.25 };
 
 export function observe(car, field, halfWidth, o = OBS, out) {
   out = out || new Float32Array(o.w * o.h);

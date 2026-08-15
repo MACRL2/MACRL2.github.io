@@ -82,9 +82,13 @@ $\varepsilon$ on a distribution you will not be tested on.**
 ## The lab: a car, a road, a camera
 
 Claims about deployment should be run, not asserted — so here is a driving lab
-small enough to live in this page. Everything below runs in your browser: the
-simulator, the expert, the CNN, its training loop. (No RL-gym dependency, no
-notebook; the full source is three small files linked at the end.)
+small enough to live in this page. The division of labor is the honest one: the
+**simulator, the expert, and the camera run live in your browser** (they have
+to — deployment happens here), while the **learning is ordinary PyTorch**, run
+offline by a short script in the repo. The page ships the trained weights,
+replays the recorded training curves, and runs the trained network's forward
+pass live — which is pinned, by test, to agree with PyTorch to a few parts in
+10⁸.
 
 The world is a closed road. The car is a kinematic unicycle at constant speed;
 its one control $u \in [-1, 1]$ is a curvature (steering) command. The expert is
@@ -125,17 +129,31 @@ recoveries because it never needs any.
 
 ## The clone: a CNN from pixels to steering
 
-The policy is a PilotNet in miniature — about 5,500 parameters, implemented
-directly in JavaScript (convolutions, backprop, Adam — no framework):
+The policy is a PilotNet in miniature — about 5,500 parameters, defined and
+trained in PyTorch (`tools/bc-lab/train_bc.py` in the repo):
 
-```js
-// image 24×24×1 → conv 5×5, stride 2, 6 ch → conv 3×3, stride 2, 12 ch
-//               → dense 192→24 → dense 24→1 (steering)
-const net = createNet(seed);
+```python
+# image 24×24×1 → conv 5×5 s2 ×6 → conv 3×3 s2 ×12 → dense 192→24 → dense 24→1
+class PilotNetMini(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.c1 = nn.Conv2d(1, 6, 5, stride=2)
+        self.c2 = nn.Conv2d(6, 12, 3, stride=2)
+        self.f1 = nn.Linear(192, 24)
+        self.f2 = nn.Linear(24, 1)
+
+    def forward(self, x):                       # x: [N, 1, 24, 24]
+        h = F.relu(self.c1(x))
+        h = F.relu(self.c2(h))
+        h = h.permute(0, 2, 3, 1).flatten(1)    # HWC order — matches the JS runtime
+        h = F.relu(self.f1(h))
+        return self.f2(h).squeeze(-1)
 ```
 
 Collection is the expert driving three laps while we record what it saw and
-what it did:
+what it did — the exporter runs the *same seeded simulator* this page runs, so
+the frames you watch being collected below are exactly the frames the network
+was trained on:
 
 ```js
 // collect demonstrations: 2,000 (image, steering) pairs from the expert
@@ -147,36 +165,40 @@ for (let i = 0; i < 2000; i++) {
 }
 ```
 
-Training is untouched supervised learning — minibatch SGD on mean-squared
-steering error:
+Training is untouched supervised learning — minibatch Adam on mean-squared
+steering error, and nothing else:
 
-```js
-// one gradient step: average ∂/∂θ ‖π_θ(image) − u_expert‖² over a minibatch
-for (let b = 0; b < batch; b++) {
-  const i = (rand() * X.length) | 0;
-  const err = forward(net, X[i], cache) - y[i];
-  backward(net, cache, (2 * err) / batch, grads);
-}
-adamStep(net, grads, opt, lr);
+```python
+model = PilotNetMini()
+opt = torch.optim.Adam(model.parameters(), lr=2e-3)
+for epoch in range(20):
+    for batch in torch.randperm(len(y_train)).split(32):
+        opt.zero_grad()
+        loss = F.mse_loss(model(X_train[batch]), y_train[batch])
+        loss.backward()
+        opt.step()
 ```
 
-And deployment is a one-line change. That line is the entire subject of this
-chapter:
+The trained weights are exported to the page, where a sixty-line forward pass
+drives the car live. Deployment is then a one-line change — and that line is
+the entire subject of this chapter:
 
 ```js
 // deployment: the only thing that moved is who computes u
-const u = predict(net, observe(car, field, track.halfWidth), cache);
+const u = predict(net, observe(car, field, track.halfWidth));
 //        was: expertSteer(car, track)
 car = stepCar(car, u);
 ```
 
 ## Deploy it
 
-The pipeline below is live: collect, train (about 1,100 real gradient steps —
-watch the loss fall four decades), then hand the network the wheel. Deployment
-is honest rather than pristine: the car starts a sliver off-center and the
-steering carries a whisper of noise — and the expert is always available to
-drive under *identical* conditions, so you can see who copes.
+The pipeline below is live: collect, fit (step 2 loads the PyTorch-trained
+weights and replays the *recorded* loss curve — 1,140 real gradient steps,
+four decades down), then hand the network the wheel. Deployment is honest
+rather than pristine, identically for every driver: the car starts a sliver
+off-center, the steering carries a whisper of noise, and every ten seconds the
+world administers a small alternating kick — wind, potholes, grip. The expert
+is always available to drive the same gauntlet, so you can see who copes.
 
 <div class="demo" data-demo="bc-clone" data-wide></div>
 
@@ -184,18 +206,20 @@ drive under *identical* conditions, so you can see who copes.
   <span class="callout-label">run the experiment</span>
   <p>Do it in order. <strong>(1) Collect</strong> — watch the histogram: the
   expert's cross-track error is one thin spike at zero. The dataset contains no
-  mistakes, so it contains no recoveries. <strong>(2) Train</strong> — held-out
-  MSE lands near 3×10⁻⁵: as supervised learning, this is a solved problem.
-  <strong>(3) Drive the clone</strong> — a clean lap, even two… then the error
-  trace starts to ratchet, and the ratchet becomes a hockey stick. When it
-  leaves the road, look right: the accent line (where the car is) has walked
-  clean off the histogram (everything it was ever taught). Drive the expert for
-  contrast — same start, same noise, flat line forever. Nudge each of them.</p>
+  mistakes, so it contains no recoveries. <strong>(2) Fit</strong> — held-out
+  MSE lands near 3×10⁻⁶: as supervised learning, this is a <em>solved
+  problem</em>. <strong>(3) Drive the clone</strong> — it shrugs off the first
+  few kicks like a natural… but watch the error spikes: the expert's decay,
+  the clone's ratchet upward, and somewhere around the fifth kick the ratchet
+  becomes a hockey stick. When it leaves the road, look right: the accent line
+  (where the car is) has walked clean off the histogram (everything it was
+  ever taught). Drive the expert for contrast — same start, same noise, same
+  kicks, flat heartbeat forever. Nudge each of them.</p>
   <p>Then the toggle: <strong>wobble the expert</strong> during collection and
-  redo the pipeline. Offline MSE comes out roughly <em>ten times worse</em> —
-  and the car stops dying, and even shrugs off nudges. The loss got worse; the
-  distribution got right; the closed loop got fixed. That inversion is the
-  chapter.</p>
+  redo the pipeline. Offline MSE comes out roughly <em>thirty times worse</em>
+  — and the car stops dying: 180 seconds, every kick absorbed. The loss got
+  worse; the distribution got right; the closed loop got fixed. That inversion
+  is the chapter.</p>
 </aside>
 
 The wobble trick — inject noise while the expert demonstrates, label with the
@@ -233,7 +257,9 @@ teased.
 
 ---
 
-*The lab's source is three files, unminified and framework-free:
-[`bc-car.js`](/static/demos/bc-car.js) (road, car, expert, camera),
-[`bc-cnn.js`](/static/demos/bc-cnn.js) (the CNN and its training loop),
-[`bc-clone.js`](/static/demos/bc-clone.js) (the pipeline demo above).*
+*The lab's source, unminified: [`bc-car.js`](/static/demos/bc-car.js) (road,
+car, expert, camera — the simulator your browser is running),
+[`bc-net.js`](/static/demos/bc-net.js) (the forward pass that drives the car),
+[`bc-clone.js`](/static/demos/bc-clone.js) (the pipeline demo above), and
+`tools/bc-lab/` in the repo (the dataset exporter, the PyTorch training script,
+and the exported [`bc-weights.json`](/static/demos/bc-weights.json)).*

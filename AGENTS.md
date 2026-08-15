@@ -59,6 +59,7 @@ Committed, project-relevant items:
 | `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check). No `sim.html`/`linalg.html`. |
 | `tests/browser/*.mjs` | Committed puppeteer smoke/screenshot harnesses (`smoke`, `live`, `shot`, `shot-page`). Need a one-time `npm install`. See "Verifying a change". |
 | `package.json`, `package-lock.json` | Declare + pin the puppeteer dev dependency for the browser harnesses. `npm test` → unit tests; `npm run smoke` → browser smoke. |
+| `tools/bc-lab/` | PyTorch training for the behavior-cloning chapter (dataset exporter + `train_bc.py`); exports the committed `static/demos/bc-weights.json`. **Not** a site/CI dependency — see its README. |
 | `docs/superpowers/` | Design spec + implementation plan + task tracker (all tasks complete). |
 | `.github/workflows/pages.yml` | CI deploy pipeline (build → Pages). |
 | `README.md`, `.gitignore` | Human overview; hygiene manifest. |
