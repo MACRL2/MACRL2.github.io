@@ -62,6 +62,7 @@ labeling off-distribution states is unnatural for a human, rolling out an
 undertrained policy on real hardware is unsafe (hence HG-/Ensemble-/Safe-/Lazy-
 DAgger, trading regret for intervention budget), and interventions are cheap
 *signal* but expensive *labels*.
+*Now live: [The Expert in the Passenger Seat](/05-interactive-imitation/).*
 
 **A.3 — Inverse RL / reward learning.** Motivated by what DAgger still cannot do:
 it clones **actions**, not **intent**; it offers no counterfactual evaluation; it
@@ -156,7 +157,7 @@ The branching structure above expands into this sequence. Chapters marked
 | 1 | [Notation and the (loss, distribution) framing](/02-notation-setup/) | *(live)* |
 | 2 | Statistical & online learning primer — regret as a design target | planned |
 | 3 | Branch A.1 — behavior cloning — [Cloning the Driver](/04-behavior-cloning/) | *(live)* |
-| 4 | Branch A.2 — interactive imitation; DAgger and safe variants | planned |
+| 4 | Branch A.2 — interactive imitation — [The Expert in the Passenger Seat](/05-interactive-imitation/) | *(live)* |
 | 5 | Branch A.3 — inverse RL and reward learning | planned |
 | 6 | Branch B.1 — models, trajectory optimization, MPC | planned |
 | 7 | Branch B.2 — learning dynamics; residual models; model exploitation | planned |

@@ -248,9 +248,10 @@ teased.
   <p>The wobble widened the training distribution <em>blindly</em> — noise
   explores near the expert's tube, not near where <em>your clone</em> actually
   ends up. The principled version of this chapter's fix is to collect labels on
-  the states the learner itself visits, and iterate: that is DAgger,
-  <a href="/06-road-ahead/">chapter A.2 on the road ahead</a> — and it is the
-  same move that rescues Branch B when
+  the states the learner itself visits, and iterate: that is DAgger, and it is
+  the <a href="/05-interactive-imitation/">next chapter</a> — where this same
+  clone gets repaired in one round, and the fix turns out to be an
+  online-learning theorem. It is also the move that rescues Branch B when
   <a href="/02-cartpole/">its supervised step</a> hits
   <a href="/05-unified-view/">the same wall</a>.</p>
 </aside>
