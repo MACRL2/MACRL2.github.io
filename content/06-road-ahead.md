@@ -148,7 +148,8 @@ explicit dial.
 
 ## The full chapter map
 
-The branching structure above expands into this sequence. Chapters marked
+The branching structure above expands into this sequence — also drawn
+[as a graph](/graph/), if you prefer the picture. Chapters marked
 *(live)* are written; the rest are scaffolded and coming.
 
 | # | Chapter | Status |

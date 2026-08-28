@@ -62,6 +62,25 @@ const CHECKS = {
     assert(katex >= 1, `expected KaTeX-rendered math, got ${katex}`);
     return `4 demos, ${canvases} canvases, ${katex} math spans`;
   },
+  // Verify the /graph/ page: the chapter-map DAG mounts with 13 nodes, 4 live links.
+  async graph(page) {
+    await page.goto(`http://127.0.0.1:${PORT}/dist/graph/index.html`, { waitUntil: 'networkidle0' });
+    await page.evaluate(async () => {
+      for (let y = 0; y <= document.body.scrollHeight; y += 300) {
+        window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60));
+      }
+    });
+    await new Promise(r => setTimeout(r, 800));
+    const nodes = await page.$$eval('.cm-node', els => els.length);
+    const live = await page.$$eval('.cm svg a', els => els.length);
+    const breaks = await page.$$eval('.cm-break', els => els.length);
+    const hrefs = await page.$$eval('.cm svg a', els => els.map(a => a.getAttribute('href')));
+    assert(nodes === 13, `expected 13 nodes, got ${nodes}`);
+    assert(live === 4, `expected 4 live links, got ${live}`);
+    assert(breaks === 5, `expected 5 failure-edge labels, got ${breaks}`);
+    assert(hrefs.every(h => /^\/[\w-]+\/$/.test(h)), `unexpected hrefs: ${hrefs}`);
+    return `13 nodes, 4 live links, 5 failure edges`;
+  },
 };
 
 function assert(cond, msg) { if (!cond) throw new Error(msg); }
