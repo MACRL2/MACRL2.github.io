@@ -29,14 +29,19 @@ window.Demos.register('microduck', (el, params, ctx) => {
   const route = params.route || 'balance';
   const wantHostControls = params.controls === 'host';
   const ratio = params.ratio || '16 / 9';
+  const framed = params.frame !== false;              // set frame:false for no box
+  const ground = params.ground || 'circle';           // 'circle' | 'plane' | 'none'
 
   el.innerHTML = '';
   const panel = document.createElement('div');
   panel.className = 'microduck-panel';
   panel.style.cssText =
-    `position:relative; aspect-ratio:${ratio}; width:100%; border-radius:12px;` +
-    'overflow:hidden; border:1px solid var(--rule, rgba(128,128,128,.25));' +
-    'background:var(--bg-soft, rgba(128,128,128,.06));';
+    `position:relative; aspect-ratio:${ratio}; width:100%;` +
+    'overflow:hidden;' +
+    (framed
+      ? 'border-radius:12px; border:1px solid var(--rule, rgba(128,128,128,.25));' +
+        'background:var(--bg-soft, rgba(128,128,128,.06));'
+      : '');
   const hint = document.createElement('div');
   hint.textContent = 'microduck sim — scroll into view to load';
   hint.style.cssText =
@@ -76,7 +81,7 @@ window.Demos.register('microduck', (el, params, ctx) => {
     iframe.loading = 'lazy';
     iframe.allow = 'accelerometer; gyroscope';
     iframe.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; border:0;';
-    iframe.src = `${VIEWER_BASE}/${route}/?theme=${themeNow()}&bg=${encodeURIComponent(pageBg())}`;
+    iframe.src = `${VIEWER_BASE}/${route}/?theme=${themeNow()}&bg=${encodeURIComponent(pageBg())}&ground=${ground}`;
     iframe.addEventListener('load', () => hint.remove());
     panel.appendChild(iframe);
   }

@@ -18,20 +18,21 @@ out which fits the course. The heavy machinery lives in a
 [separate viewer](https://macrl2.github.io/microduck-viewer/) — this page only
 embeds it, and only loads it when you scroll it into view.
 
-## Framed inline panel
+## Borderless, in the flow
 
-A modest panel in the text column. The simulation carries its own **Push** and
-**Reset** controls inside the frame.
+No box — the simulation sits directly in the text column on the page's own
+background, with just a soft shadow "hovering" under the feet that fades away.
+It carries its own **Push** and **Reset** controls.
 
-<div class="demo" data-demo="microduck" data-params='{"route":"balance"}'></div>
+<div class="demo" data-demo="microduck" data-params='{"route":"balance","frame":false,"ground":"circle"}'></div>
 
 ## Wide panel, host controls
 
 The same simulation, bled wider than the prose, with **Push** and **Reset**
 rendered by the page itself (driving the sim over `postMessage`) so they match
-the site's styling.
+the site's styling. The ground is the same local fading circle under the feet.
 
-<div class="demo" data-demo="microduck" data-wide data-params='{"route":"balance","controls":"host"}'></div>
+<div class="demo" data-demo="microduck" data-wide data-params='{"route":"balance","controls":"host","ground":"circle"}'></div>
 
-Both embeds mirror the site's light/dark toggle, and neither adds a single byte
-of physics code to this repo.
+Both embeds take on the page's exact background and mirror the light/dark
+toggle, and neither adds a single byte of physics code to this repo.
