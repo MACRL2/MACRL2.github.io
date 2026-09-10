@@ -539,9 +539,11 @@ section > h2 {
 
 @media (min-width: 1500px) {
   .valuefn-widget {
-    display: block; position: fixed; top: 8.5rem; right: clamp(1rem, 3vw, 3rem);
-    width: 150px; z-index: 5; color: var(--fg-muted);
+    display: block; position: fixed; top: 50%; right: clamp(1rem, 3vw, 3rem);
+    transform: translateY(-50%); width: 150px; z-index: 5; color: var(--fg-muted);
+    opacity: 0; pointer-events: none; transition: opacity 0.4s ease;   /* fades with the tracked section */
   }
+  .valuefn-widget.is-active { opacity: 1; }
 }
 .valuefn-title {
   font-size: 0.72rem; text-transform: lowercase; letter-spacing: 0.06em;

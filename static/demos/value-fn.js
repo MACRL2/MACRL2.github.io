@@ -35,7 +35,7 @@ window.Demos.register('value-fn', (el, params, ctx) => {
   const dot = wrap.querySelector('.valuefn-dot');
   const img = g.createImageData(N, N);
 
-  let raf = 0;
+  let raf = 0, running = false;
   function frame(ts) {
     const t = ts * 0.001;
     // two slowly wandering value peaks + a broad basin
@@ -58,9 +58,26 @@ window.Demos.register('value-fn', (el, params, ctx) => {
     const sx = 0.5 + 0.40 * Math.sin(t * 0.7 + 0.4), sy = 0.5 + 0.40 * Math.cos(t * 0.55);
     dot.style.left = (sx * 100) + '%';
     dot.style.top = (sy * 100) + '%';
-    raf = requestAnimationFrame(frame);
+    if (running) raf = requestAnimationFrame(frame);
   }
-  raf = requestAnimationFrame(frame);
+  function start() { if (!running) { running = true; raf = requestAnimationFrame(frame); } }
+  function stop() { running = false; cancelAnimationFrame(raf); }
+
+  // Only reveal + animate while the tracked section (default: the robot preview)
+  // is on screen — so it "updates as you scroll by" rather than running always.
+  const sel = (params && params.target) || '.demo[data-demo="microduck"]';
+  const targets = document.querySelectorAll(sel);
+  if (!targets.length) { wrap.classList.add('is-active'); start(); }   // fallback: always on
+  else {
+    const seen = new Set();
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) { if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target); }
+      const active = seen.size > 0;
+      wrap.classList.toggle('is-active', active);
+      if (active) start(); else stop();
+    }, { threshold: 0.12 });
+    targets.forEach((t) => io.observe(t));
+  }
   // No cleanup returned on purpose (see the singleton note above): the margin
-  // widget persists for the life of the page rather than tearing down on scroll.
+  // widget stays in the DOM; its own observer controls when it shows/animates.
 });
