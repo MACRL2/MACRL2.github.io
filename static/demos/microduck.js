@@ -73,6 +73,7 @@ window.Demos.register('microduck', (el, params, ctx) => {
       mk('Push ↯', 'push'),
       mk('Nod', 'emote', 'nod'), mk('Shake', 'emote', 'shake'),
       mk('Tilt', 'emote', 'tilt'), mk('Look', 'emote', 'look'),
+      mk('Quack', 'emote', 'quack'),
       mk('Reset', 'reset'));
     el.appendChild(bar);
   }
