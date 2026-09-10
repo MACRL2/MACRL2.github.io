@@ -18,6 +18,11 @@ out which fits the course. The heavy machinery lives in a
 [separate viewer](https://macrl2.github.io/microduck-viewer/) — this page only
 embeds it, and only loads it when you scroll it into view.
 
+<div class="demo" data-demo="value-fn"></div>
+
+On a wide screen, a small animated **value function** sits in the right margin — a
+placeholder for now, but the intended teaching aid for *what the robot knows*.
+
 ## Borderless, in the flow
 
 No box — the simulation sits directly in the text column on the page's own

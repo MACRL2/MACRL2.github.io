@@ -527,3 +527,36 @@ section > h2 {
   padding: 0.2rem 0.45rem; border-radius: 5px; pointer-events: none; white-space: nowrap; z-index: 5;
 }
 .demo-diagram [data-reveal-trigger].is-on { color: var(--accent); border-color: var(--accent); }
+
+/* ----------------------------------------------------------------
+   Margin "value function" teaching aid (static/demos/value-fn.js)
+
+   A small animated V(s) pinned in the right gutter. Only shown on wide
+   viewports where the gutter clears the widest bleed demo (--demo-max);
+   below that there's no room, so it's hidden rather than overlapping.
+---------------------------------------------------------------- */
+.valuefn-widget { display: none; }
+
+@media (min-width: 1500px) {
+  .valuefn-widget {
+    display: block; position: fixed; top: 8.5rem; right: clamp(1rem, 3vw, 3rem);
+    width: 150px; z-index: 5; color: var(--fg-muted);
+  }
+}
+.valuefn-title {
+  font-size: 0.72rem; text-transform: lowercase; letter-spacing: 0.06em;
+  color: var(--fg-faint); margin-bottom: 0.35rem;
+}
+.valuefn-stage {
+  position: relative; width: 150px; height: 150px; border-radius: 10px;
+  overflow: hidden; border: 1px solid var(--rule);
+}
+.valuefn-canvas { width: 100%; height: 100%; display: block; }   /* upscaled, smoothed */
+.valuefn-dot {
+  position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px;
+  border-radius: 50%; background: var(--accent); border: 2px solid var(--bg);
+  box-shadow: 0 0 6px var(--accent); pointer-events: none;
+}
+.valuefn-cap {
+  margin-top: 0.4rem; font-size: 0.68rem; line-height: 1.35; color: var(--fg-faint);
+}
