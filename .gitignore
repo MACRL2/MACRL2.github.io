@@ -17,3 +17,5 @@ tools/bc-lab/out/
 # Workspace meta dirs (not part of the project)
 .xdg-config/
 .claude-memory/
+spike-microduck/
+microduck-viewer/
