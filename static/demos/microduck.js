@@ -58,18 +58,22 @@ window.Demos.register('microduck', (el, params, ctx) => {
   if (wantHostControls) {
     const bar = document.createElement('div');
     bar.className = 'demo-controls';
-    bar.style.cssText = 'display:flex; gap:.5rem; margin-top:.6rem;';
-    const mk = (label, type) => {
+    bar.style.cssText = 'display:flex; gap:.5rem; margin-top:.6rem; flex-wrap:wrap;';
+    const mk = (label, type, value) => {
       const b = document.createElement('button');
       b.type = 'button'; b.textContent = label;
       b.style.cssText =
         'padding:.5rem .9rem; border:1px solid var(--rule,rgba(128,128,128,.3));' +
         'border-radius:8px; background:var(--bg-soft,transparent); color:var(--fg);' +
         'font:inherit; cursor:pointer;';
-      b.addEventListener('click', () => post('microduck:' + type));
+      b.addEventListener('click', () => post('microduck:' + type, value));
       return b;
     };
-    bar.append(mk('Push ↯', 'push'), mk('Reset', 'reset'));
+    bar.append(
+      mk('Push ↯', 'push'),
+      mk('Nod', 'emote', 'nod'), mk('Shake', 'emote', 'shake'),
+      mk('Tilt', 'emote', 'tilt'), mk('Look', 'emote', 'look'),
+      mk('Reset', 'reset'));
     el.appendChild(bar);
   }
 
