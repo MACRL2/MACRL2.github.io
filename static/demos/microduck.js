@@ -14,6 +14,17 @@ const VIEWER_BASE = 'https://macrl2.github.io/microduck-viewer';
 const themeNow = () =>
   (document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
 
+// Resolve any CSS color (incl. oklch) to #rrggbb via a 1px canvas readback, so
+// the embedded sim's background/ground can match the page exactly.
+function toHex(cssColor) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 1;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillStyle = cssColor; ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('');
+}
+const pageBg = () => toHex(getComputedStyle(document.body).backgroundColor);
+
 window.Demos.register('microduck', (el, params, ctx) => {
   const route = params.route || 'balance';
   const wantHostControls = params.controls === 'host';
@@ -65,7 +76,7 @@ window.Demos.register('microduck', (el, params, ctx) => {
     iframe.loading = 'lazy';
     iframe.allow = 'accelerometer; gyroscope';
     iframe.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; border:0;';
-    iframe.src = `${VIEWER_BASE}/${route}/?theme=${themeNow()}`;
+    iframe.src = `${VIEWER_BASE}/${route}/?theme=${themeNow()}&bg=${encodeURIComponent(pageBg())}`;
     iframe.addEventListener('load', () => hint.remove());
     panel.appendChild(iframe);
   }
@@ -75,8 +86,9 @@ window.Demos.register('microduck', (el, params, ctx) => {
   }, { rootMargin: '200px' });
   io.observe(panel);
 
-  // Mirror the site's light/dark toggle into the iframe.
-  const mo = new MutationObserver(() => post('microduck:theme', themeNow()));
+  // Mirror the site's light/dark toggle (and the resolved page color) into the iframe.
+  const mo = new MutationObserver(() => iframe && iframe.contentWindow &&
+    iframe.contentWindow.postMessage({ type: 'microduck:theme', value: themeNow(), bg: pageBg() }, VIEWER_BASE));
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   return () => { io.disconnect(); mo.disconnect(); if (iframe) iframe.remove(); };
