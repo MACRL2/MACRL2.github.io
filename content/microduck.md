@@ -42,6 +42,14 @@ the site's styling. The ground is the same local fading circle under the feet.
 Both embeds take on the page's exact background and mirror the light/dark
 toggle, and neither adds a single byte of physics code to this repo.
 
+## Walking
+
+The *same* policy that balances also **walks** — you just feed it a nonzero
+velocity command instead of zero. Use the on-screen arrows (or WASD / ← ↑ ↓ →) to
+steer, or press **Wander** to let it stroll on its own.
+
+<div class="demo" data-demo="microduck" data-params='{"route":"walk"}'></div>
+
 ## Abstract scene geometry
 
 The world can hold simple obstacles abstracted as boxes. Here a low **lip** of a
