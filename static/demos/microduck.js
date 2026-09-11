@@ -30,7 +30,8 @@ window.Demos.register('microduck', (el, params, ctx) => {
   const wantHostControls = params.controls === 'host';
   const ratio = params.ratio || '16 / 9';
   const framed = params.frame !== false;              // set frame:false for no box
-  const ground = params.ground || 'circle';           // 'circle' | 'plane' | 'none'
+  const scene = params.scene || '';                    // obstacle preset: 'lip'|'box'|'step'
+  const ground = params.ground || (scene ? 'plane' : 'circle');   // scenes read best over a floor
 
   el.innerHTML = '';
   const panel = document.createElement('div');
@@ -86,7 +87,10 @@ window.Demos.register('microduck', (el, params, ctx) => {
     iframe.loading = 'lazy';
     iframe.allow = 'accelerometer; gyroscope';
     iframe.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; border:0;';
-    iframe.src = `${VIEWER_BASE}/${route}/?theme=${themeNow()}&bg=${encodeURIComponent(pageBg())}&ground=${ground}`;
+    let q = `theme=${themeNow()}&bg=${encodeURIComponent(pageBg())}&ground=${ground}`;
+    if (scene) q += `&scene=${encodeURIComponent(scene)}`;
+    if (params.h) q += `&h=${encodeURIComponent(params.h)}`;
+    iframe.src = `${VIEWER_BASE}/${route}/?${q}`;
     iframe.addEventListener('load', () => hint.remove());
     panel.appendChild(iframe);
   }

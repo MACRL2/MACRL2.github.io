@@ -41,3 +41,15 @@ the site's styling. The ground is the same local fading circle under the feet.
 
 Both embeds take on the page's exact background and mirror the light/dark
 toggle, and neither adds a single byte of physics code to this repo.
+
+## Abstract scene geometry
+
+The world can hold simple obstacles abstracted as boxes. Here a low **lip** of a
+set height sits on the ground — real collision geometry the robot can be pushed
+against. Give it a shove toward the lip and watch the contact.
+
+<div class="demo" data-demo="microduck" data-params='{"route":"balance","controls":"host","scene":"lip"}'></div>
+
+The scene is just a list of boxes (`{pos, size}`) injected into both the physics
+world and the render — the same hook a chapter can use to build a course of steps,
+curbs, or gaps for the robot to negotiate.
