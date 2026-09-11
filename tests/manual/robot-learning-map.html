@@ -1,0 +1,119 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!-- Self-checking spot-check for the landing-page map demo. Serve the REPO ROOT
+     (python3 -m http.server) and open /tests/manual/robot-learning-map.html —
+     every line below should read PASS. Add ?headless to drive requestAnimationFrame
+     from timers, which is what headless Chrome needs (it produces no frames):
+       google-chrome --headless=new --virtual-time-budget=30000 \
+         --dump-dom 'http://127.0.0.1:8000/tests/manual/robot-learning-map.html?headless' -->
+<link rel="stylesheet" href="/styles.css">
+<style>body{margin:2rem;max-width:70rem}#log{white-space:pre-wrap;font:12px var(--mono,monospace)}</style>
+</head><body>
+<div class="demo" data-demo="robot-learning-map"></div>
+<div id="log">booting…</div>
+<script type="module" src="/static/demo-kit/kit.js"></script>
+<script type="module">
+import { SYSTEMS, defaultWeights, coeffs, project } from '/static/demos/robot-learning-map-data.js';
+import { Theme } from '/static/demo-kit/theme.js';
+const errs = [];
+window.addEventListener('error', e => errs.push('ERROR ' + e.message));
+window.addEventListener('unhandledrejection', e => errs.push('REJECT ' + e.reason));
+const ce = console.error.bind(console); console.error = (...a) => { errs.push('console.error ' + a.join(' ')); ce(...a); };
+const out = [];
+const flush = () => document.getElementById('log').textContent = out.join('\n');
+const ok = (name, cond, extra='') => { out.push(`${cond ? 'PASS' : 'FAIL'} ${name} ${extra}`); flush(); };
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+const $ = (sel) => document.querySelector(sel);
+
+if (location.search.includes('headless')) {
+  // headless chrome produces no frames, so rAF never fires: drive it from
+  // timers instead, which virtual time does advance.
+  window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 16);
+  window.cancelAnimationFrame = (id) => clearTimeout(id);
+}
+
+(async () => { try {
+  // headless IntersectionObserver is unreliable here, so mount by hand through
+  // the same register() contract kit.js uses.
+  let mountFn = null;
+  const orig = window.Demos.register.bind(window.Demos);
+  window.Demos.register = (n, f) => { mountFn = f; orig(n, f); };
+  await import('/static/demos/robot-learning-map.js');
+  ok('registers under its own name', typeof mountFn === 'function');
+  const cleanup = mountFn(document.querySelector('.demo'), {}, { Theme });
+  ok('returns a cleanup fn', typeof cleanup === 'function');
+  await wait(50);
+  ok('mounts', !!$('.rlmap'));
+  const canvas = $('.rlmap canvas');
+  ok('canvas sized', canvas.width > 100 && canvas.height > 100, `${canvas.width}x${canvas.height}`);
+
+  $('.rlmap-axisbtn-x').click();
+  await wait(60);
+  const slider = $('[data-mix="x"]');
+  ok('x axis unfolds with a mix slider', !!slider);
+  ok('readout present', /Manual Supervision/.test($('[data-readout="x"]')?.textContent || ''));
+
+  slider.value = '0';
+  slider.dispatchEvent(new Event('input', { bubbles: true }));
+  await wait(30);
+  ok('slider drives the readout', /1\.00 · Modeling/.test($('[data-readout="x"]').textContent),
+     JSON.stringify($('[data-readout="x"]').textContent));
+
+  document.querySelector('[data-act="sweep"]').click();
+  await wait(300);
+  ok('sweep runs', true);
+  await wait(3200);
+  ok('sweep lands back on an even mix', /0\.50 · Modeling/.test($('[data-readout="x"]').textContent),
+     JSON.stringify($('[data-readout="x"]').textContent));
+
+  document.querySelector('[data-child="reference"]').click();
+  await wait(500);
+  ok('descends to a child axis', /Reference Data/.test($('.rlmap-axisbtn-x').textContent));
+  ok('leaf axis says it is atomic', /atomic axis/.test($('.rlmap-panel').textContent));
+  document.querySelector('[data-act="up"]').click();
+  await wait(500);
+  ok('climbs back up', /Manual Supervision/.test($('.rlmap-axisbtn-x span.rlmap-axisname').textContent));
+
+  $('.rlmap-axisbtn-y').click(); await wait(60);
+  document.querySelector('[data-child="embodiment"]').click(); await wait(500);
+  document.querySelector('[data-child="act"]').click(); await wait(500);
+  ok('y axis reaches |Action| with a breadcrumb',
+     /complexity › embodiment/.test($('.rlmap-axisbtn-y').textContent) &&
+     /\|Action\|/.test($('.rlmap-axisbtn-y').textContent), JSON.stringify($('.rlmap-axisbtn-y').textContent));
+
+  document.querySelector('[data-group="imitation"]').click(); await wait(30);
+  ok('legend filters', document.querySelector('[data-group="imitation"]').classList.contains('is-on'));
+  document.querySelector('[data-group="imitation"]').click(); await wait(30);
+
+  document.querySelector('[data-act="reset"]').click(); await wait(60);
+  ok('reset restores the headline axes', /Manual Supervision/.test($('.rlmap-axisbtn-x').textContent) && !$('.rlmap-panel'));
+
+  const w = defaultWeights(), cx = coeffs('supervision', w), cy = coeffs('complexity', w);
+  const sys = SYSTEMS.find(s => s.id === 'lqr');
+  const r = canvas.getBoundingClientRect();
+  const PADL = 30, PADR = 22, PADT = 20, PADB = 30;
+  const px = project(sys, cx) * (r.width - PADL - PADR) + PADL;
+  const py = (r.height - PADB) - project(sys, cy) * (r.height - PADB - PADT);
+  const pe = (type, x, y) => canvas.dispatchEvent(new PointerEvent(type, {
+    clientX: r.left + x, clientY: r.top + y, bubbles: true, pointerId: 1 }));
+  pe('pointermove', px, py); await wait(30);
+  ok('hover shows the tooltip', !$('.rlmap-tip').hidden && /LQR/.test($('.rlmap-tip').textContent));
+
+  document.querySelector('[data-act="place"]').click(); await wait(20);
+  pe('pointerdown', px, py); pe('pointermove', px + 60, py - 40); pe('pointerup', px + 60, py - 40);
+  await wait(40);
+  ok('drag moved the system', /moved/.test($('.rlmap-status').textContent), JSON.stringify($('.rlmap-status').textContent));
+
+  try { Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true }); } catch {}
+  document.querySelector('[data-act="copy"]').click(); await wait(200);
+  const exported = $('.rlmap-export')?.value || '';
+  const row = (exported.match(/\{ id: 'lqr'[\s\S]*?\},/) || [''])[0];
+  ok('export reflects the new placement',
+     /id: 'lqr'/.test(exported) && !/modeling: 1\.00, reference: 0\.00/.test(row), JSON.stringify(row));
+
+  cleanup();
+  await wait(30);
+  out.push(errs.length ? 'FAIL console/runtime errors: ' + errs.join(' | ') : 'PASS no console or runtime errors');
+  flush();
+} catch (e) { out.push('errs: ' + errs.join(' | ')); out.push('THREW ' + (e && e.stack || e)); flush(); }
+})();
+</script></body></html>

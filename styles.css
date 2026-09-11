@@ -513,3 +513,142 @@ section > h2 {
   padding: 0.2rem 0.45rem; border-radius: 5px; pointer-events: none; white-space: nowrap; z-index: 5;
 }
 .demo-diagram [data-reveal-trigger].is-on { color: var(--accent); border-color: var(--accent); }
+
+/* ----------------------------------------------------------------
+   Robot-learning map (static/demos/robot-learning-map.js)
+   A figure that wants more room than the reading measure, so it bleeds
+   outward on wide screens and collapses back inside it on narrow ones.
+---------------------------------------------------------------- */
+.rlmap-host {
+  --bleed: clamp(0rem, calc((100vw - 2 * var(--pad-x) - 100%) / 2), 7rem);
+  margin: 1.75rem calc(-1 * var(--bleed));
+}
+.rlmap {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 0.85rem 0.95rem 0.7rem;
+}
+
+.rlmap-bar {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  justify-content: space-between; gap: 0.5rem 1rem;
+  margin-bottom: 0.35rem;
+}
+.rlmap-hint { margin: 0; font-size: 0.84rem; color: var(--fg-muted); }
+.rlmap-tools { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.rlmap-tools .ctl-btn { font-size: 0.8rem; padding: 0.22rem 0.55rem; }
+.ctl-btn.is-on { border-color: var(--accent); color: var(--accent); }
+
+.rlmap-frame {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+.rlmap-stage {
+  position: relative;
+  height: clamp(360px, 58vh, 520px);
+  grid-column: 2; grid-row: 1;
+}
+.rlmap-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+.rlmap-axisbtn {
+  font: inherit; background: none; border: 0; cursor: pointer;
+  color: var(--fg); padding: 0.35rem 0.4rem; text-align: center;
+  display: flex; align-items: baseline; justify-content: center; gap: 0.35rem;
+  border-radius: 6px;
+}
+.rlmap-axisbtn:hover, .rlmap-axisbtn:focus-visible { color: var(--accent); }
+.rlmap-axisbtn-x { grid-column: 2; grid-row: 2; }
+.rlmap-axisbtn-y {
+  grid-column: 1; grid-row: 1;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+}
+.rlmap-axisname { font-size: 0.95rem; }
+.rlmap-trail { font-size: 0.78rem; color: var(--fg-faint); }
+.rlmap-caret { font-size: 0.7rem; color: var(--fg-faint); }
+.rlmap-axisbtn:hover .rlmap-caret { color: var(--accent); }
+
+.rlmap-panel { border-top: 1px solid var(--rule); margin-top: 0.5rem; padding-top: 0.6rem; }
+.rlmap-panel-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem;
+}
+.rlmap-eyebrow {
+  font-size: 0.7rem; letter-spacing: 0.06em; text-transform: lowercase;
+  color: var(--fg-faint);
+}
+.rlmap-panel-head strong { font-size: 0.98rem; }
+.rlmap-blurb { font-size: 0.82rem; color: var(--fg-muted); flex: 1 1 14rem; }
+.rlmap-close {
+  font: inherit; background: none; border: 0; cursor: pointer;
+  color: var(--fg-faint); line-height: 1; padding: 0 0.2rem;
+}
+.rlmap-close:hover { color: var(--accent); }
+
+.rlmap-split {
+  display: grid; grid-template-columns: auto minmax(6rem, 1fr) auto;
+  align-items: center; gap: 0.6rem; margin: 0.55rem 0 0.35rem;
+}
+.rlmap-split input[type="range"] { width: 100%; accent-color: var(--accent); }
+.rlmap-child {
+  font: inherit; font-size: 0.85rem; background: none; cursor: pointer;
+  color: var(--fg); border: 1px solid transparent; border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+}
+.rlmap-child:hover, .rlmap-child:focus-visible { color: var(--accent); border-color: var(--rule); }
+
+.rlmap-readout {
+  margin: 0; font-size: 0.82rem; color: var(--fg-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.rlmap-note { margin: 0.35rem 0 0; font-size: 0.82rem; color: var(--fg-muted); }
+.rlmap-link {
+  font: inherit; font-size: inherit; background: none; border: 0; padding: 0;
+  color: var(--accent); cursor: pointer; text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rlmap-export-slot:not(:empty) { margin-top: 0.6rem; }
+.rlmap-export {
+  width: 100%; min-height: 9rem; font: 0.78rem/1.5 var(--mono);
+  color: var(--fg); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 0.5rem;
+}
+
+.rlmap-tip {
+  position: absolute; z-index: 6; pointer-events: none;
+  min-width: 12rem; max-width: 17rem;
+  background: var(--bg); border: 1px solid var(--rule); border-radius: 8px;
+  padding: 0.45rem 0.55rem; font-size: 0.78rem; line-height: 1.35;
+  box-shadow: 0 6px 18px oklch(0 0 0 / 0.12);
+}
+.rlmap-tip strong { display: block; font-size: 0.84rem; }
+.rlmap-tip em { display: block; color: var(--fg-muted); margin-bottom: 0.3rem; }
+.rlmap-tiprow {
+  display: grid; grid-template-columns: 6.6rem 1fr 2.1rem;
+  align-items: center; gap: 0.35rem; color: var(--fg-muted);
+}
+.rlmap-bar-track { height: 4px; background: var(--rule); border-radius: 2px; }
+.rlmap-bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+.rlmap-tipnum { text-align: right; font-variant-numeric: tabular-nums lining-nums; }
+
+.rlmap-legend {
+  list-style: none; margin: 0.6rem 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem;
+}
+.rlmap-legend-btn {
+  font: inherit; font-size: 0.8rem; background: none; border: 0; padding: 0.15rem 0;
+  cursor: pointer; color: var(--fg-muted);
+  display: inline-flex; align-items: center; gap: 0.35rem;
+}
+.rlmap-legend-btn:hover, .rlmap-legend-btn.is-on { color: var(--accent); }
+.rlmap-swatch { width: 18px; height: 18px; }
+.rlmap-status {
+  margin: 0.4rem 0 0; min-height: 1.2em;
+  font-size: 0.8rem; color: var(--fg-muted);
+}
+
+@media (max-width: 40rem) {
+  .rlmap-stage { height: clamp(260px, 46vh, 360px); }
+  .rlmap-tiprow { grid-template-columns: 5.4rem 1fr 2rem; }
+}

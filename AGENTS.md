@@ -55,8 +55,8 @@ Committed, project-relevant items:
 | `static/demo-kit/` | Reusable demo framework: `kit.js`, `theme.js`, `sim.js`, `plot.js`, `controls.js`, `diagram.js`, `linalg.js`. Rarely changes. |
 | `static/demos/` | Individual demo modules (`cartpole-*.js`) + shared pure physics (`cartpole-dynamics.js`). **Where you add new demos.** |
 | `static/vendor/katex/` | Vendored KaTeX (css/js + `contrib/auto-render.min.js` + fonts). No CDN. Loaded only on interactive pages. |
-| `tests/*.test.mjs` | Committed Node unit tests (11 tests: `integrate`, `linalg`, `plot`, `cartpole-dynamics`). `node --test tests/`. |
-| `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check). No `sim.html`/`linalg.html`. |
+| `tests/*.test.mjs` | Committed Node unit tests (19 tests: `integrate`, `linalg`, `plot`, `cartpole-dynamics`, `robot-learning-map-data`). `node --test tests/`. |
+| `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check) and `robot-learning-map.html` (self-checking: drives the landing-page map and prints PASS/FAIL). No `sim.html`/`linalg.html`. |
 | `tests/browser/*.mjs` | Committed puppeteer smoke/screenshot harnesses (`smoke`, `live`, `shot`, `shot-page`). Need a one-time `npm install`. See "Verifying a change". |
 | `package.json`, `package-lock.json` | Declare + pin the puppeteer dev dependency for the browser harnesses. `npm test` → unit tests; `npm run smoke` → browser smoke. |
 | `docs/superpowers/` | Design spec + implementation plan + task tracker (all tasks complete). |
@@ -228,6 +228,28 @@ Templates to copy from: `cartpole-diagram.js` (simplest, SVG), `cartpole-sim.js`
 (`Anim` + `CanvasDraw` + `Controls`), `cartpole-linearized.js` (`Plot` +
 `linalg` pipeline), `cartpole-learn.js` (`Plot` + button-driven stepping).
 
+## The landing-page map
+
+`content/index.md` is a framing page, not a chapter: it argues that robot
+learning is best read as a space, and mounts `robot-learning-map` to show it.
+Three files, and only the first is ever edited to move a dot:
+
+- `static/demos/robot-learning-map-data.js` — **pure** (no browser globals, no
+  absolute imports, so Node can import it). Holds `AXIS_TREE`, the five leaf
+  axes, and `SYSTEMS`. Every system is scored **only** on the leaves
+  (`modeling`, `reference`, `obs`, `act`, `dynamics`, each in `[0,1]`); the
+  headline positions are computed. Also holds the projection math: `coeffs`
+  (a node's convex weights over the leaves), `project`, `spread` (the interval
+  a projection hides), `backProject` (minimum-norm drag).
+- `static/demos/robot-learning-map.js` — the mount fn: canvas scatter, axis
+  unfolding, mix sliders, hover tooltip, legend filter, place mode, export.
+- `tests/robot-learning-map-data.test.mjs` + `tests/manual/robot-learning-map.html`
+  — the math, and a self-checking browser page for the interactions.
+
+Placements are opinions and are meant to be re-argued. The fastest loop: open
+the page, turn on **place mode**, drag, hit **copy coordinates**, paste the
+exported `SYSTEMS` block over the one in the data file.
+
 ## Verifying a change
 
 **Unit tests (committed, always available):**
@@ -236,7 +258,8 @@ Templates to copy from: `cartpole-diagram.js` (simplest, SVG), `cartpole-sim.js`
 node --test tests/
 ```
 
-11 tests across `integrate`, `linalg`, `plot`, `cartpole-dynamics`; ~70ms. A
+19 tests across `integrate`, `linalg`, `plot`, `cartpole-dynamics`, and
+`robot-learning-map-data` (the axis-tree projection math); ~70ms. A
 harmless `MODULE_TYPELESS_PACKAGE_JSON` warning prints. **Do NOT run `npm test`**
 — it is a stub that errors.
 
@@ -262,6 +285,17 @@ node tests/browser/smoke.mjs chapter     # dist/02-cartpole: 4 demos, >=3 canvas
 node tests/browser/live.mjs              # smoke the deployed prod chapter -> LIVE_OK / LIVE_FAIL
 node tests/browser/shot.mjs              # light+dark screenshots of the cart-pole chapter -> cartpole-*.png
 node tests/browser/shot-page.mjs <dist-path> <out-prefix>   # light+dark shots of any dist page
+```
+
+**No npm on this machine?** `tests/manual/robot-learning-map.html` is a
+self-checking page that needs no install: serve the repo root
+(`python3 -m http.server`), open it, and read the PASS/FAIL list. Headless
+Chrome produces no frames, so `requestAnimationFrame` never fires there — add
+`?headless` to drive it from timers and `--dump-dom` the result:
+
+```bash
+google-chrome --headless=new --no-sandbox --virtual-time-budget=30000 \
+  --dump-dom 'http://127.0.0.1:8000/tests/manual/robot-learning-map.html?headless'
 ```
 
 All harnesses launch headless Chromium with `--no-sandbox`. Shortcuts:
