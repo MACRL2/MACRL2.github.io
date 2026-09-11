@@ -53,10 +53,11 @@ steer, or press **Wander** to let it stroll on its own.
 ## Abstract scene geometry
 
 The world can hold simple obstacles abstracted as boxes. Here a low **lip** of a
-set height sits on the ground — real collision geometry the robot can be pushed
-against. Give it a shove toward the lip and watch the contact.
+set height sits on the ground — real collision geometry — and the duck is running
+the **walk** policy, so you can steer it (arrows / WASD) toward the lip, or let it
+wander into it, and watch the contact.
 
-<div class="demo" data-demo="microduck" data-params='{"route":"balance","controls":"host","scene":"lip"}'></div>
+<div class="demo" data-demo="microduck" data-params='{"route":"walk","scene":"lip"}'></div>
 
 The scene is just a list of boxes (`{pos, size}`) injected into both the physics
 world and the render — the same hook a chapter can use to build a course of steps,
