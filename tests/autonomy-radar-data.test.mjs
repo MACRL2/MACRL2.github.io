@@ -163,8 +163,12 @@ test('sortIds walks the roots in order, then each lineage depth-first', () => {
 });
 
 test('readingsBlock round-trips: every reading appears, keyed by id', () => {
-  const block = readingsBlock({ vla: { 'tc.1.1': 0.8 }, rl: { 'sa.2': 0.25 } });
-  assert.match(block, /vla: \{/);
-  assert.match(block, /'tc\.1\.1':\s+0\.80,\s+\/\/ Observability/);
-  assert.match(block, /'sa\.2':\s+0\.25,\s+\/\/ Self-supervising/);
+  const [first, second] = METHOD_IDS;
+  const block = readingsBlock({ [first]: { 'tc.1.1': 0.8 }, [second]: { 'sa.2': 0.25 } });
+  for (const m of METHOD_IDS) assert.match(block, new RegExp(`${m}: \\{`), `${m} is exported`);
+  assert.match(block, /'tc\.1\.1':\s+0\.80,\s+\/\/ /);
+  assert.match(block, /'sa\.2':\s+0\.25,\s+\/\/ /);
+  // the trailing comment is the axis's current display name, whatever it is
+  assert.ok(block.includes(`// ${displayOf('tc.1.1')}`), block);
+  assert.ok(block.includes(`// ${displayOf('sa.2')}`), block);
 });

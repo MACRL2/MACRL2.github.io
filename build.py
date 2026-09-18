@@ -70,6 +70,50 @@ def _short_hash(data: bytes, n: int = 10) -> str:
     return hashlib.sha256(data).hexdigest()[:n]
 
 
+# An ES module's import specifier is a plain URL, and resolving one drops the
+# query of the module doing the importing: kit.js is fetched as
+# `kit.js?v=<fp>`, but its `./theme.js` is not, and a demo's
+# `/static/demos/foo-data.js` is not either. So every module below the entry
+# point was pinned to whatever the browser had cached. Stamping the fingerprint
+# onto each specifier at copy time closes that: sources stay plain ES modules,
+# and dist/ ships a fully cache-busted graph.
+_JS_IMPORT_RE = re.compile(
+    r"""(?P<head>\b(?:from|import)\s*)(?P<q>['"])(?P<spec>(?:\.{1,2}/|/)[\w./-]+\.js)(?P=q)"""
+)
+
+
+def _static_fingerprint() -> bytes:
+    """Every byte shipped from static/, so a demo edit moves the build id.
+
+    Without this the fingerprint only tracked styles.css and the page list, and
+    editing a demo changed no URL anywhere — the whole point of the query.
+    """
+    if not STATIC_DIR.exists():
+        return b""
+    h = hashlib.sha256()
+    for path in sorted(STATIC_DIR.rglob("*")):
+        rel = path.relative_to(STATIC_DIR)
+        if path.is_dir() or any(part.startswith("_") for part in rel.parts):
+            continue  # dev fixtures are not copied, so they must not count
+        h.update(str(rel).encode())
+        h.update(path.read_bytes())
+    return h.digest()
+
+
+def _bust_js_imports(js_root: Path, fp: str) -> int:
+    """Append ?v=<fp> to every relative/absolute .js import under `js_root`."""
+    touched = 0
+    for js in sorted(js_root.rglob("*.js")):
+        src = js.read_text(encoding="utf-8")
+        out = _JS_IMPORT_RE.sub(
+            lambda m: f"{m['head']}{m['q']}{m['spec']}?v={fp}{m['q']}", src
+        )
+        if out != src:
+            js.write_text(out, encoding="utf-8")
+            touched += 1
+    return touched
+
+
 def parse_front_matter(text: str) -> tuple[dict, str]:
     """Split optional YAML front-matter from the Markdown body."""
     m = FRONT_MATTER_RE.match(text)
@@ -135,7 +179,9 @@ def render() -> None:
 
     css_bytes = STYLES_SRC.read_bytes()
     css_version = _short_hash(css_bytes)
-    build_fp = _short_hash(css_bytes + repr([p["slug"] for p in pages]).encode())
+    build_fp = _short_hash(
+        css_bytes + repr([p["slug"] for p in pages]).encode() + _static_fingerprint()
+    )
 
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES_DIR)),
@@ -157,6 +203,7 @@ def render() -> None:
         # never ship in a production build.
         shutil.copytree(STATIC_DIR, OUT_DIR / "static", dirs_exist_ok=True,
                         ignore=shutil.ignore_patterns("_*"))
+        _bust_js_imports(OUT_DIR / "static", build_fp)
 
     page_tmpl = env.get_template("page.html.j2")
     for i, page in enumerate(toc):
