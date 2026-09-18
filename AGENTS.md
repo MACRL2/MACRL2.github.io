@@ -55,8 +55,8 @@ Committed, project-relevant items:
 | `static/demo-kit/` | Reusable demo framework: `kit.js`, `theme.js`, `sim.js`, `plot.js`, `controls.js`, `diagram.js`, `linalg.js`. Rarely changes. |
 | `static/demos/` | Individual demo modules (`cartpole-*.js`) + shared pure physics (`cartpole-dynamics.js`). **Where you add new demos.** |
 | `static/vendor/katex/` | Vendored KaTeX (css/js + `contrib/auto-render.min.js` + fonts). No CDN. Loaded only on interactive pages. |
-| `tests/*.test.mjs` | Committed Node unit tests (19 tests: `integrate`, `linalg`, `plot`, `cartpole-dynamics`, `robot-learning-map-data`). `node --test tests/`. |
-| `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check) and `robot-learning-map.html` (self-checking: drives the landing-page map and prints PASS/FAIL). No `sim.html`/`linalg.html`. |
+| `tests/*.test.mjs` | Committed Node unit tests (30 tests: `integrate`, `linalg`, `plot`, `cartpole-dynamics`, `robot-learning-map-data`, `autonomy-radar-data`). `node --test tests/`. |
+| `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check) plus the self-checking `autonomy-radar.html` and `robot-learning-map.html` (they drive the demo and print PASS/FAIL; each mounts into a plain div, **not** a `.demo` one, or `kit.js` would mount a second copy on top). No `sim.html`/`linalg.html`. |
 | `tests/browser/*.mjs` | Committed puppeteer smoke/screenshot harnesses (`smoke`, `live`, `shot`, `shot-page`). Need a one-time `npm install`. See "Verifying a change". |
 | `package.json`, `package-lock.json` | Declare + pin the puppeteer dev dependency for the browser harnesses. `npm test` → unit tests; `npm run smoke` → browser smoke. |
 | `docs/superpowers/` | Design spec + implementation plan + task tracker (all tasks complete). |
@@ -228,11 +228,36 @@ Templates to copy from: `cartpole-diagram.js` (simplest, SVG), `cartpole-sim.js`
 (`Anim` + `CanvasDraw` + `Controls`), `cartpole-linearized.js` (`Plot` +
 `linalg` pipeline), `cartpole-learn.js` (`Plot` + button-driven stepping).
 
-## The landing-page map
+## The landing-page radar
 
-`content/index.md` is a framing page, not a chapter: it argues that robot
-learning is best read as a space, and mounts `robot-learning-map` to show it.
-Three files, and only the first is ever edited to move a dot:
+`content/index.md` is a framing page, not a chapter. It opens on two qualities —
+**Task Complexity** and **System Autonomy** — and mounts `autonomy-radar`: a
+radar whose axes split. Click an axis and it opens into the two axes it stood
+for; left alone it splits and folds on its own, endlessly.
+
+- `static/demos/autonomy-radar-data.js` — **pure** (Node-importable). An axis id
+  *is* its path (`sa` → `sa.1` → `sa.1.2`), so any axis not listed in `AXES` is
+  synthesized on demand and shows as its code (`SA.1.2`). **To name an axis, add
+  one line to `AXES` keyed by its id** — nothing else changes, and the codes stay
+  valid. Also holds `visibleAxes` / `openGroups` (what is drawn, and which
+  families are open), `angleFor` / `angleDelta`, and `hueOf` / `colorOf`: a
+  family keeps its hue, siblings split it by a gap that halves each level.
+- `static/demos/autonomy-radar.js` — the mount fn: canvas wheel, the split/fold
+  tween, lineage arcs outside the rim (click one to fold that family), hover
+  tooltip, the code inventory under the chart, and the automatic cycle.
+- `MAX_DEPTH` (data module) caps how deep the tree goes; `BEAT` / `TWEEN` /
+  `MAX_AXES` (demo module) pace the automatic cycle. Pass
+  `data-params='{"autoplay": false}'` to mount it still.
+
+Problems and methods get placed on this wheel once the axes are named; that
+labeler does not exist yet.
+
+## The projection map
+
+`content/projection-map.md` (hidden from the TOC, linked from the landing page)
+keeps the earlier framing: robot learning as a plane, Manual Supervision against
+Task Complexity, with `robot-learning-map`. Three files, and only the first is
+ever edited to move a dot:
 
 - `static/demos/robot-learning-map-data.js` — **pure** (no browser globals, no
   absolute imports, so Node can import it). Holds `AXIS_TREE`, the five leaf
@@ -258,8 +283,9 @@ exported `SYSTEMS` block over the one in the data file.
 node --test tests/
 ```
 
-19 tests across `integrate`, `linalg`, `plot`, `cartpole-dynamics`, and
-`robot-learning-map-data` (the axis-tree projection math); ~70ms. A
+30 tests across `integrate`, `linalg`, `plot`, `cartpole-dynamics`,
+`robot-learning-map-data` (projection math) and `autonomy-radar-data`
+(the radar's axis tree, angles and lineage color); ~70ms. A
 harmless `MODULE_TYPELESS_PACKAGE_JSON` warning prints. **Do NOT run `npm test`**
 — it is a stub that errors.
 

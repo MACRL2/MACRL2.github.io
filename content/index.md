@@ -1,85 +1,46 @@
 ---
 title: Home
-description: A spatial map of robot learning — and the two axes the field keeps projecting away.
+description: Task Complexity and System Autonomy — the two qualities, and the axes hiding inside them.
 interactive: true
 ---
 
-<!-- First-draft framing: the map below is the durable part; edit this prose freely. -->
+<!-- Working draft. The axes below the first level are unnamed on purpose: the
+     radar animates the structure so the names can be chosen against it. -->
 
-Most arguments about robot learning are arguments about coordinates. *Model-based
-or learned? Sim or real? RL or imitation?* Those are labels on a list, and lists
-don't compose — they can't tell you what a method costs, what it buys, or which
-methods are really neighbors.
+> Humanity's search for artificial intelligence has been in service of these two
+> qualities.
 
-So start with a space instead. Two axes carry almost every claim anyone makes
-about a robot-learning system:
+**Task Complexity** — how much problem there is to solve. **System Autonomy** —
+how much of the solving the system does without us. Every result anyone reports
+is a claim about one or both.
 
-- **Manual Supervision** — how much human effort the method consumes before it works.
-- **Task Complexity** — how hard the problem is once that supervision is set aside.
+Two axes is also where the trouble starts. Neither is a single quantity: each is
+a family, and the arguments that matter happen *inside* them. So the wheel below
+splits. Click an axis and it opens into the two axes it was standing in for;
+click again, further down. Color carries lineage — a family keeps its hue as it
+divides, so you can always see where an axis came from.
 
-Every method promises the same thing in these coordinates: move *up* without
-moving *right*. Harder tasks, less human effort. Plot the field that way and
-you get the map below.
-
-<div class="demo" data-demo="robot-learning-map"></div>
+<div class="demo" data-demo="autonomy-radar"></div>
 
 <aside class="callout" data-kind="try">
   <span class="callout-label">try this</span>
-  <p>Click either axis name. It unfolds into the two things it was hiding, and a
-  slider rotates the projection between them — watch the systems slide along
-  their whiskers. Keep unfolding <em>Task Complexity</em> until you hit the
-  atomic axes.</p>
+  <p>Left alone it splits and folds on its own, endlessly. Click any axis to take
+  over: click a spoke to split it, click the arc outside a family to fold it back.</p>
 </aside>
 
-## The axes are projections
+## Naming the axes
 
-Neither headline axis is a real quantity. Each is a weighted blend — a
-one-dimensional shadow of two things that vary independently:
+Below the two roots, the axes are unnamed on purpose. Each one carries a handle —
+`TC.1`, `SA.2.1` — listed under the wheel as it appears, so the structure can be
+argued about before the vocabulary is fixed. Hand me the names against those
+handles and they get saved; the codes stay valid either way.
 
-$$
-\text{Manual Supervision} = (1-w)\cdot\text{Modeling} + w\cdot\text{Reference Data}
-$$
-
-**Modeling** is structure written down by hand: dynamics, rewards, resets,
-calibration, the plan. **Reference Data** is behavior collected from humans:
-demonstrations, teleop, labels. Both cost a person's time, so both land on the
-same axis — and then the axis tells you nothing about which one you spent, even
-though they fail in opposite ways. Modeling is effort that transfers and does
-not scale; reference data is effort that scales and does not transfer.
-
-Task Complexity hides a sharper split still:
-
-$$
-\text{Task Complexity} = (1-w)\cdot\underbrace{\big[(1-v)\cdot|\text{Observation}| + v\cdot|\text{Action}|\big]}_{\text{Embodiment Complexity}} + w\cdot\text{Task Dynamics}
-$$
-
-**Embodiment Complexity** is how much robot there is — how wide the observation
-is to read, how many degrees of freedom there are to command. **Task Dynamics**
-is contact, underactuation, horizon, stochasticity: the part of the problem the
-robot cannot slow down. Sweep that slider and the map reorganizes. A generalist
-policy reading open-world video and a hopping robot recovering from a shove sit
-near each other on the projected axis and at opposite corners underneath it. The
-field's loudest recent progress is almost all on one child; the problems that
-strand a robot in the field are on the other.
+Problems (loco-manipulation) and methods (Sim2Real) both land on this wheel once
+the axes settle. That comes next.
 
 <aside class="callout">
-  <span class="callout-label">the claim</span>
-  <p>Progress that looks like movement on the headline axes is usually movement
-  along one hidden child while the other stays put. You can only see which by
-  unfolding the axis — which is what this map is for.</p>
+  <span class="callout-label">also here</span>
+  <p>An earlier framing of the same question — the field as a plane, with
+  <em>Manual Supervision</em> against <em>Task Complexity</em> — lives on
+  <a href="/projection-map/">the projection map</a>.</p>
 </aside>
-
-## Why this vantage point
-
-This map comes out of the Robot Learning Lab at the University of Washington,
-from three people who have spent time on both sides of it — building learning
-methods, and taking robots into the field where the modeling assumptions and the
-demonstration distributions both run out.
-
-## Placing a system
-
-Every dot is scored on the five atomic axes only; the headline positions are
-computed. Turn on **place mode** to drag a method to where you think it belongs
-(or double-click empty space to add one), then **copy coordinates** to export the
-whole set. Disagreement about a placement is the useful kind of disagreement:
-it is a disagreement about what a method actually costs.

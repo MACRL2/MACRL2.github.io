@@ -8,7 +8,8 @@
 <link rel="stylesheet" href="/styles.css">
 <style>body{margin:2rem;max-width:70rem}#log{white-space:pre-wrap;font:12px var(--mono,monospace)}</style>
 </head><body>
-<div class="demo" data-demo="robot-learning-map"></div>
+<!-- a plain div, NOT .demo: kit.js would otherwise mount a second copy on top -->
+<div id="host"></div>
 <div id="log">booting…</div>
 <script type="module" src="/static/demo-kit/kit.js"></script>
 <script type="module">
@@ -39,7 +40,7 @@ if (location.search.includes('headless')) {
   window.Demos.register = (n, f) => { mountFn = f; orig(n, f); };
   await import('/static/demos/robot-learning-map.js');
   ok('registers under its own name', typeof mountFn === 'function');
-  const cleanup = mountFn(document.querySelector('.demo'), {}, { Theme });
+  const cleanup = mountFn(document.getElementById('host'), {}, { Theme });
   ok('returns a cleanup fn', typeof cleanup === 'function');
   await wait(50);
   ok('mounts', !!$('.rlmap'));

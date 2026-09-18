@@ -1,0 +1,117 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!-- Self-checking spot-check for the landing-page radar. Serve the REPO ROOT
+     (python3 -m http.server) and open /tests/manual/autonomy-radar.html —
+     every line below should read PASS. Add ?headless to drive
+     requestAnimationFrame from timers, which is what headless Chrome needs
+     (it produces no frames):
+       google-chrome --headless=new --virtual-time-budget=40000 \
+         --dump-dom 'http://127.0.0.1:8000/tests/manual/autonomy-radar.html?headless' -->
+<link rel="stylesheet" href="/styles.css">
+<style>body{margin:2rem;max-width:70rem}#log{white-space:pre-wrap;font:12px var(--mono,monospace)}</style>
+</head><body>
+<!-- a plain div, NOT .demo: kit.js would otherwise mount a second copy on top -->
+<div id="host"></div>
+<div id="log">booting…</div>
+<script type="module" src="/static/demo-kit/kit.js"></script>
+<script type="module">
+import { visibleAxes, angleFor, codeOf } from '/static/demos/autonomy-radar-data.js';
+import { Theme } from '/static/demo-kit/theme.js';
+
+if (location.search.includes('headless')) {
+  // headless chrome produces no frames, so rAF never fires: drive it from
+  // timers instead, which virtual time does advance.
+  window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 16);
+  window.cancelAnimationFrame = (id) => clearTimeout(id);
+}
+
+const errs = [];
+window.addEventListener('error', e => errs.push('ERROR ' + e.message));
+window.addEventListener('unhandledrejection', e => errs.push('REJECT ' + e.reason));
+const ce = console.error.bind(console); console.error = (...a) => { errs.push('console.error ' + a.join(' ')); ce(...a); };
+const out = [];
+const flush = () => document.getElementById('log').textContent = out.join('\n');
+const ok = (name, cond, extra = '') => { out.push(`${cond ? 'PASS' : 'FAIL'} ${name} ${extra}`); flush(); };
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+const $ = (s) => document.querySelector(s);
+const codes = () => [...document.querySelectorAll('.radar-code')].map(n => n.textContent);
+
+(async () => { try {
+  let mountFn = null;
+  const orig = window.Demos.register.bind(window.Demos);
+  window.Demos.register = (n, f) => { mountFn = f; orig(n, f); };
+  await import('/static/demos/autonomy-radar.js');
+  ok('registers under its own name', typeof mountFn === 'function');
+
+  // autoplay off for a deterministic start
+  const cleanup = mountFn(document.getElementById('host'), { autoplay: false }, { Theme });
+  ok('returns a cleanup fn', typeof cleanup === 'function');
+  await wait(60);
+  ok('mounts', !!$('.radar'));
+  const canvas = $('.radar canvas');
+  ok('canvas sized', canvas.width > 100 && canvas.height > 100, `${canvas.width}x${canvas.height}`);
+  ok('opens on the two qualities', codes().join(',') === 'TC,SA', JSON.stringify(codes()));
+
+  // click the SA spoke: it points straight down when there are two axes
+  const r = canvas.getBoundingClientRect();
+  const cx = r.width / 2, cy = r.height / 2;
+  const R = Math.max(70, Math.min(r.width * 0.5 - 150, r.height * 0.5 - 66)); // mirrors fit() in the demo
+  const clickAt = (angle, rad) => canvas.dispatchEvent(new MouseEvent('click', {
+    clientX: r.left + cx + Math.cos(angle) * rad,
+    clientY: r.top + cy + Math.sin(angle) * rad, bubbles: true }));
+  const moveAt = (angle, rad) => canvas.dispatchEvent(new PointerEvent('pointermove', {
+    clientX: r.left + cx + Math.cos(angle) * rad,
+    clientY: r.top + cy + Math.sin(angle) * rad, bubbles: true, pointerId: 1 }));
+
+  moveAt(angleFor(1, 2), R * 0.7); await wait(30);
+  ok('hover explains the split', !$('.rlmap-tip').hidden && /split into SA\.1 and SA\.2/.test($('.rlmap-tip').textContent),
+     JSON.stringify($('.rlmap-tip').textContent.slice(0, 80)));
+
+  clickAt(angleFor(1, 2), R * 0.7);
+  await wait(1200);
+  ok('clicking an axis gives a three-pronged wheel', codes().join(',') === 'TC,SA.1,SA.2', JSON.stringify(codes()));
+
+  // and the spokes have actually rotated to thirds
+  clickAt(angleFor(1, 3), R * 0.7);           // SA.1 now sits at slot 1 of 3
+  await wait(1200);
+  ok('the second split lands on the axis now in that slot',
+     codes().join(',') === 'TC,SA.1.1,SA.1.2,SA.2', JSON.stringify(codes()));
+
+  // fold it back by clicking the lineage arc for SA.1 (ring at depth 2)
+  const bandR = R + 10 + (2 - 1) * (7 + 3);
+  clickAt(angleFor(1, 4) + Math.PI / 4 * 0.5, bandR);
+  await wait(1200);
+  ok('clicking a lineage arc folds that family back',
+     codes().join(',') === 'TC,SA.1,SA.2', JSON.stringify(codes()));
+
+  $('[data-act="reset"]').click(); await wait(1200);
+  ok('fold back returns to the two qualities', codes().join(',') === 'TC,SA', JSON.stringify(codes()));
+
+  // autoplay: grows on its own, then folds back, endlessly
+  $('[data-act="auto"]').click();
+  ok('auto-split toggles on', /on/.test($('[data-act="auto"]').textContent));
+  let peak = 2, seenFold = false, prev = 2;
+  for (let i = 0; i < 40; i++) {
+    await wait(500);
+    const n = codes().length;
+    peak = Math.max(peak, n);
+    if (n < prev) seenFold = true;
+    prev = n;
+  }
+  ok('auto-split grows the wheel', peak >= 6, `peak ${peak} axes`);
+  ok('auto-split folds back too (it cycles)', seenFold);
+  ok('it is still running after a full cycle', codes().length >= 2);
+
+  $('[data-act="ghost"]').click(); await wait(60);
+  ok('example silhouette toggles', /is-on/.test($('[data-act="ghost"]').className));
+
+  cleanup();
+  await wait(200);
+  const after = codes().length;
+  await wait(1200);
+  ok('cleanup stops the animation', codes().length === after, `${after} → ${codes().length}`);
+
+  out.push(errs.length ? 'FAIL console/runtime errors: ' + errs.join(' | ') : 'PASS no console or runtime errors');
+  flush();
+} catch (e) { out.push('errs: ' + errs.join(' | ')); out.push('THREW ' + (e && e.stack || e)); flush(); }
+})();
+</script></body></html>
