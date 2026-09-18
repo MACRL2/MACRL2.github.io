@@ -71,6 +71,7 @@ demonstrated, *audit* the objective, and improve *beyond* the demonstrator.
 Content: max-margin and max-entropy IRL, the adversarial/GAIL view as distribution
 matching over $d^\pi$ vs. $d^{\pi^\star}$, and the honest caveat — reward is
 **ill-posed** without regularization.
+*Now live: [Learning What the Driver Wants](/06-inverse-reinforcement-learning/).*
 
 > **Closing beat.** BC → DAgger → IRL is a ladder of *what you are willing to pay
 > for*: data, expert availability, and compute, respectively.
@@ -159,7 +160,7 @@ The branching structure above expands into this sequence — also drawn
 | 2 | Statistical & online learning primer — regret as a design target | planned |
 | 3 | Branch A.1 — behavior cloning — [Cloning the Driver](/04-behavior-cloning/) | *(live)* |
 | 4 | Branch A.2 — interactive imitation — [The Expert in the Passenger Seat](/05-interactive-imitation/) | *(live)* |
-| 5 | Branch A.3 — inverse RL and reward learning | planned |
+| 5 | Branch A.3 — inverse RL and reward learning — [Learning What the Driver Wants](/06-inverse-reinforcement-learning/) | *(live)* |
 | 6 | Branch B.1 — models, trajectory optimization, MPC | planned |
 | 7 | Branch B.2 — learning dynamics; residual models; model exploitation | planned |
 | 8 | Branch B.3 — iterative system ID and model-based RL; uncertainty | planned |

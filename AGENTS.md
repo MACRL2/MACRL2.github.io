@@ -60,6 +60,7 @@ Committed, project-relevant items:
 | `tests/browser/*.mjs` | Committed puppeteer smoke/screenshot harnesses (`smoke`, `live`, `shot`, `shot-page`). Need a one-time `npm install`. See "Verifying a change". |
 | `package.json`, `package-lock.json` | Declare + pin the puppeteer dev dependency for the browser harnesses. `npm test` → unit tests; `npm run smoke` → browser smoke. |
 | `tools/bc-lab/` | PyTorch training for the driving-lab chapters (BC + DAgger): dataset exporter, `train_bc.py`, `run_dagger.mjs` + `train_round.py`; exports the committed `static/demos/{bc-weights,dagger-run}.json`. **Not** a site/CI dependency — see its README. |
+| `tools/irl-lab/` | Small PyTorch MaxEnt IRL example for the inverse-RL chapter. Runs a heading-aware bicycle on an 8-connected terrain grid, learns reward weights from synthetic expert trajectories, and exports `static/demos/irl-maxent.json` for a browser visualization. **Not** a site/CI dependency — see its README. |
 | `docs/superpowers/` | Design spec + implementation plan + task tracker (all tasks complete). |
 | `.github/workflows/pages.yml` | CI deploy pipeline (build → Pages). |
 | `README.md`, `.gitignore` | Human overview; hygiene manifest. |

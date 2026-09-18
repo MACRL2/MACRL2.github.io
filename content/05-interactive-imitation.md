@@ -181,7 +181,8 @@ Here the simulator let us ignore all three. Chapter by chapter, we won't.
   the loop forever, it can't evaluate a plan nobody demonstrated, and it can
   never drive <em>better</em> than the passenger seat. Recovering the objective
   itself — so the robot can be scored, audited, and improved beyond its teacher
-  — is inverse RL, <a href="/06-road-ahead/">chapter A.3 on the road ahead</a>.
+  — is inverse RL, the <a href="/06-inverse-reinforcement-learning/">next
+  chapter</a>.
   And the same reduction seen here returns in <a href="/05-unified-view/">Branch
   B</a>, where the world itself provides the labels.</p>
 </aside>

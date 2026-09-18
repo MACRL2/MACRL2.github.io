@@ -2,7 +2,7 @@
 // Serves the repo root, loads a page in headless Chromium, collects console
 // errors, and runs a per-page check function. Usage:
 //   node tests/browser/smoke.mjs <which>
-// where <which> is one of: kit | chapter
+// where <which> is one of: kit | chapter | irl
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
@@ -62,6 +62,7 @@ const CHECKS = {
     assert(katex >= 1, `expected KaTeX-rendered math, got ${katex}`);
     return `4 demos, ${canvases} canvases, ${katex} math spans`;
   },
+<<<<<<< HEAD
   // Verify the /graph/ page: the chapter-map DAG mounts with 13 nodes, 4 live links.
   async graph(page) {
     await page.goto(`http://127.0.0.1:${PORT}/dist/graph/index.html`, { waitUntil: 'networkidle0' });
@@ -80,6 +81,20 @@ const CHECKS = {
     assert(breaks === 5, `expected 5 failure-edge labels, got ${breaks}`);
     assert(hrefs.every(h => /^\/[\w-]+\/$/.test(h)), `unexpected hrefs: ${hrefs}`);
     return `13 nodes, 4 live links, 5 failure edges`;
+=======
+  // Verify the IRL chapter renders the PyTorch-exported visualization + math.
+  async irl(page) {
+    await page.goto(`http://127.0.0.1:${PORT}/dist/06-inverse-reinforcement-learning/index.html`, { waitUntil: 'networkidle0' });
+    await page.$eval('[data-demo="irl-maxent"]', el => el.scrollIntoView({ block: 'center' }));
+    await page.waitForFunction(() => document.querySelector('.irl-status')?.textContent.includes('PyTorch step'), { timeout: 5000 });
+    const canvases = await page.$$eval('[data-demo="irl-maxent"] canvas', els => els.length);
+    const katex = await page.$$eval('.katex', els => els.length);
+    const status = await page.$eval('.irl-status', el => el.textContent);
+    assert(canvases === 3, `expected 3 IRL canvases, got ${canvases}`);
+    assert(katex >= 10, `expected >=10 KaTeX spans, got ${katex}`);
+    assert(status.includes('avoids both pond and trees'), `unexpected demo status: ${status}`);
+    return `${canvases} canvases, ${katex} math spans, PyTorch artifact loaded`;
+>>>>>>> a44d218 (irl initial)
   },
 };
 
