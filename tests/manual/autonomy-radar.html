@@ -54,7 +54,7 @@ const codes = () => [...document.querySelectorAll('.radar-code')].map(n => n.tex
   // click the SA spoke: it points straight down when there are two axes
   const r = canvas.getBoundingClientRect();
   const cx = r.width / 2, cy = r.height / 2;
-  const R = Math.max(70, Math.min(r.width * 0.5 - 150, r.height * 0.5 - 66)); // mirrors fit() in the demo
+  const R = Math.max(70, Math.min(r.width * 0.5 - 172, r.height * 0.5 - 66)); // mirrors fit() in the demo
   const clickAt = (angle, rad) => canvas.dispatchEvent(new MouseEvent('click', {
     clientX: r.left + cx + Math.cos(angle) * rad,
     clientY: r.top + cy + Math.sin(angle) * rad, bubbles: true }));

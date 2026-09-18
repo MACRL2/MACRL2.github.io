@@ -73,7 +73,7 @@ function mount(el, params, ctx) {
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     cx = W / 2; cy = H / 2;
-    R = Math.max(70, Math.min(W * 0.5 - 150, H * 0.5 - 66));
+    R = Math.max(70, Math.min(W * 0.5 - 172, H * 0.5 - 66));
   }
 
   // ── layout ──────────────────────────────────────────────────────────────

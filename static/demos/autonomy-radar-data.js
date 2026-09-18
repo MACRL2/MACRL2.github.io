@@ -17,9 +17,12 @@ export const MAX_DEPTH = 4;
 
 /**
  * Named axes. Roots carry a `code` and a `hue` (the lineage color); every
- * descendant derives both. Add entries as the set of axes settles:
+ * descendant derives both. Anything absent here is synthesized and shows as its
+ * code, so naming an axis is one line keyed by its id:
  *
- *   'sa.1': { label: 'Decision Authority', blurb: 'who chooses the next action' },
+ *   'sa.1.2': { label: 'Reset Cost', blurb: 'what it takes to try again' },
+ *
+ * `blurb` is optional — it only feeds the hover tooltip.
  */
 export const AXES = {
   tc: {
@@ -28,12 +31,21 @@ export const AXES = {
     hue: 250,
     blurb: 'How much problem there is to solve.',
   },
+  'tc.1': { label: 'Actor Capability' },
+  'tc.1.1': { label: 'Observability' },
+  'tc.1.2': { label: 'Decision Authority' },
+  'tc.2': { label: 'Environment Complexity' },
+  'tc.2.1': { label: 'Horizon' },
+  'tc.2.2': { label: 'Dynamics' },
+
   sa: {
     code: 'SA',
     label: 'System Autonomy',
     hue: 35,
     blurb: 'How much of the solving the system does without us.',
   },
+  'sa.1': { label: 'Data Availability' },
+  'sa.2': { label: 'Self-supervising' },
 };
 
 export const parentOf = (id) => (id.includes('.') ? id.slice(0, id.lastIndexOf('.')) : null);

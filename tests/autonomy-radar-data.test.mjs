@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ROOT_IDS, MAX_DEPTH,
-  visibleAxes, openGroups, childrenOf, parentOf, pathOf, depthOf, canExpand,
+  AXES, ROOT_IDS, MAX_DEPTH,
+  visibleAxes, openGroups, childrenOf, parentOf, pathOf, depthOf, canExpand, rootOf,
   codeOf, displayOf, isNamed, angleFor, angleDelta, hueOf, colorOf, sampleValue,
 } from '../static/demos/autonomy-radar-data.js';
 
@@ -18,9 +18,23 @@ test('an axis id is its own path', () => {
 
 test('unnamed axes fall back to a readable code', () => {
   assert.equal(displayOf('tc'), 'Task Complexity');
-  assert.equal(displayOf('sa.2.1'), 'SA.2.1');
   assert.equal(codeOf('tc.1'), 'TC.1');
-  assert.ok(isNamed('sa') && !isNamed('sa.1'));
+  assert.ok(isNamed('sa'), 'the roots are always named');
+  // whichever axes have been named by now, an unnamed one still shows its code
+  const unnamed = ['sa.2.2.1', 'sa.1.1.2', 'tc.2.2.1'].find((id) => !AXES[id]);
+  assert.ok(unnamed, 'the tree is deeper than the names');
+  assert.ok(!isNamed(unnamed));
+  assert.equal(displayOf(unnamed), codeOf(unnamed));
+  assert.match(displayOf(unnamed), /^(TC|SA)(\.\d)+$/);
+});
+
+test('a named axis shows its name', () => {
+  for (const [id, def] of Object.entries(AXES)) {
+    if (!def.label) continue;
+    assert.equal(displayOf(id), def.label);
+    assert.ok(isNamed(id));
+    assert.equal(rootOf(id), id.split('.')[0], 'named ids stay on their lineage');
+  }
 });
 
 test('the wheel opens on exactly the two qualities', () => {

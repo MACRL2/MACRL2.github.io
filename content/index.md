@@ -28,12 +28,21 @@ divides, so you can always see where an axis came from.
   over: click a spoke to split it, click the arc outside a family to fold it back.</p>
 </aside>
 
-## Naming the axes
+## The axes so far
 
-Below the two roots, the axes are unnamed on purpose. Each one carries a handle —
-`TC.1`, `SA.2.1` — listed under the wheel as it appears, so the structure can be
-argued about before the vocabulary is fixed. Hand me the names against those
-handles and they get saved; the codes stay valid either way.
+Two levels are named. Anything deeper still carries a handle — `TC.1.1.2`,
+`SA.2.1` — shown on the spoke and listed under the wheel as it appears, so the
+structure stays arguable before the vocabulary is fixed.
+
+- **Task Complexity**
+  - **Actor Capability** — Observability · Decision Authority
+  - **Environment Complexity** — Horizon · Dynamics
+- **System Autonomy**
+  - **Data Availability**
+  - **Self-supervising**
+
+Names attach to position, so renaming one never disturbs the rest, and an
+unnamed axis keeps working underneath a named parent.
 
 Problems (loco-manipulation) and methods (Sim2Real) both land on this wheel once
 the axes settle. That comes next.
