@@ -55,7 +55,7 @@ Committed, project-relevant items:
 | `static/demo-kit/` | Reusable demo framework: `kit.js`, `theme.js`, `sim.js`, `plot.js`, `controls.js`, `diagram.js`, `linalg.js`. Rarely changes. |
 | `static/demos/` | Individual demo modules (`cartpole-*.js`) + shared pure physics (`cartpole-dynamics.js`). **Where you add new demos.** |
 | `static/vendor/katex/` | Vendored KaTeX (css/js + `contrib/auto-render.min.js` + fonts). No CDN. Loaded only on interactive pages. |
-| `tests/*.test.mjs` | Committed Node unit tests (30 tests: `integrate`, `linalg`, `plot`, `cartpole-dynamics`, `robot-learning-map-data`, `autonomy-radar-data`). `node --test tests/`. |
+| `tests/*.test.mjs` | Committed Node unit tests (38 tests: `integrate`, `linalg`, `plot`, `cartpole-dynamics`, `robot-learning-map-data`, `autonomy-radar-data`). `node --test tests/`. |
 | `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check) plus the self-checking `autonomy-radar.html` and `robot-learning-map.html` (they drive the demo and print PASS/FAIL; each mounts into a plain div, **not** a `.demo` one, or `kit.js` would mount a second copy on top). No `sim.html`/`linalg.html`. |
 | `tests/browser/*.mjs` | Committed puppeteer smoke/screenshot harnesses (`smoke`, `live`, `shot`, `shot-page`). Need a one-time `npm install`. See "Verifying a change". |
 | `package.json`, `package-lock.json` | Declare + pin the puppeteer dev dependency for the browser harnesses. `npm test` → unit tests; `npm run smoke` → browser smoke. |
@@ -240,17 +240,38 @@ for; left alone it splits and folds on its own, endlessly.
   synthesized on demand and shows as its code (`SA.1.2`). **To name an axis, add
   one line to `AXES` keyed by its id** — nothing else changes, and the codes stay
   valid. Also holds `visibleAxes` / `openGroups` (what is drawn, and which
-  families are open), `angleFor` / `angleDelta`, and `hueOf` / `colorOf`: a
-  family keeps its hue, siblings split it by a gap that halves each level.
+  families are open), `angleFor` / `angleDelta`, `hueOf` / `colorOf` (a family
+  keeps its hue, siblings split it by a gap that halves each level), and
+  `METHODS` — see below.
 - `static/demos/autonomy-radar.js` — the mount fn: canvas wheel, the split/fold
-  tween, lineage arcs outside the rim (click one to fold that family), hover
-  tooltip, the code inventory under the chart, and the automatic cycle.
+  tween, lineage arcs outside the rim (click one to fold that family), the
+  method silhouettes and their draggable handles, hover tooltip, the code
+  inventory under the chart, and the automatic cycle.
 - `MAX_DEPTH` (data module) caps how deep the tree goes; `BEAT` / `TWEEN` /
   `MAX_AXES` (demo module) pace the automatic cycle. Pass
-  `data-params='{"autoplay": false}'` to mount it still.
+  `data-params='{"autoplay": false}'` to mount it still, or
+  `'{"methods": ["rl"]}'` to open with only one silhouette shown.
 
-Problems and methods get placed on this wheel once the axes are named; that
-labeler does not exist yet.
+**Methods on the wheel.** `METHODS` in the data module holds one entry per
+method (`vla`, `rl`) — `label`, `full`, `hue`, `blurb`, and `scores`: readings in
+`[0,1]` keyed by axis id, stored at whatever depth the claim was made at. Every
+other axis is derived by three rules, which is what lets the wheel split to any
+depth and still draw a closed silhouette:
+
+1. an axis with a stored reading uses it;
+2. an axis with readings *below* it averages its two children — so splitting an
+   axis never moves a silhouette by itself;
+3. anything else inherits the nearest scored ancestor.
+
+`readingOf(scores, id)` applies them; `setReading(scores, id, v)` is the drag —
+pure, and it drops the readings underneath `id`, so the handle lands exactly
+where it was let go and everything finer inherits it. Handles take the pointer
+before the axis does (within `GRAB` px), so **click the rim affordance or the
+label to split a spoke**, not its middle.
+
+The loop for re-arguing a placement mirrors the projection map's: open the page,
+drag handles, hit **copy readings**, paste the exported block over `scores` in
+`METHODS`. Problems (loco-manipulation) come next, on the same wheel.
 
 ## The projection map
 
@@ -283,9 +304,10 @@ exported `SYSTEMS` block over the one in the data file.
 node --test tests/
 ```
 
-30 tests across `integrate`, `linalg`, `plot`, `cartpole-dynamics`,
+38 tests across `integrate`, `linalg`, `plot`, `cartpole-dynamics`,
 `robot-learning-map-data` (projection math) and `autonomy-radar-data`
-(the radar's axis tree, angles and lineage color); ~70ms. A
+(the radar's axis tree, angles, lineage color, and the method readings);
+~70ms. A
 harmless `MODULE_TYPELESS_PACKAGE_JSON` warning prints. **Do NOT run `npm test`**
 — it is a stub that errors.
 

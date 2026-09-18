@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
   AXES, ROOT_IDS, MAX_DEPTH,
   visibleAxes, openGroups, childrenOf, parentOf, pathOf, depthOf, canExpand, rootOf,
-  codeOf, displayOf, isNamed, angleFor, angleDelta, hueOf, colorOf, sampleValue,
+  codeOf, displayOf, isNamed, angleFor, angleDelta, hueOf, colorOf,
+  METHOD_IDS, METHODS, readingOf, setReading, hasFinerReading, methodColor,
+  readingsBlock, sortIds,
 } from '../static/demos/autonomy-radar-data.js';
 
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} !~ ${b}`);
@@ -95,10 +97,74 @@ test('color encodes lineage: siblings split their parent hue, families stay apar
   assert.notEqual(colorOf('sa.1', false), colorOf('sa.1', true), 'light and dark differ');
 });
 
-test('placeholder readings are deterministic and inside the wheel', () => {
-  for (const id of ['tc', 'sa.1', 'sa.2.1.2']) {
-    const v = sampleValue(id);
-    assert.equal(v, sampleValue(id));
-    assert.ok(v > 0.3 && v < 0.95);
+test('every method is scored on the named leaves', () => {
+  assert.deepEqual(METHOD_IDS, Object.keys(METHODS));
+  for (const m of METHOD_IDS) {
+    const { label, hue, scores } = METHODS[m];
+    assert.ok(label && typeof hue === 'number');
+    assert.ok(Object.keys(scores).length >= 4, `${m} says something`);
+    for (const [id, v] of Object.entries(scores)) {
+      assert.ok(v >= 0 && v <= 1, `${m}.${id} is a reading`);
+      assert.ok(ROOT_IDS.includes(rootOf(id)), 'scored on a real lineage');
+      assert.ok(depthOf(id) <= MAX_DEPTH);
+    }
   }
+  assert.match(methodColor('vla', false), /^oklch\(/);
+  assert.notEqual(methodColor('vla', false), methodColor('vla', true));
+  assert.notEqual(methodColor('vla', false), methodColor('rl', false));
+});
+
+test('a stored reading is used as-is', () => {
+  const s = { 'tc.1.1': 0.8 };
+  assert.equal(readingOf(s, 'tc.1.1'), 0.8);
+  assert.ok(hasFinerReading(s, 'tc.1'));
+  assert.ok(!hasFinerReading(s, 'tc.1.1'), 'strictly below, not itself');
+});
+
+test('a parent averages the readings under it', () => {
+  const s = { 'tc.1.1': 0.8, 'tc.1.2': 0.4 };
+  close(readingOf(s, 'tc.1'), 0.6);
+  // tc.2 says nothing at any depth, so tc itself falls back
+  close(readingOf(s, 'tc', 0.5), (0.6 + 0.5) / 2);
+});
+
+test('an unscored axis inherits its nearest scored ancestor', () => {
+  const s = { 'sa.1': 0.8 };
+  assert.equal(readingOf(s, 'sa.1.2'), 0.8);
+  assert.equal(readingOf(s, 'sa.1.2.1'), 0.8, 'all the way down');
+  assert.equal(readingOf(s, 'sa.2', 0.25), 0.25, 'nothing to inherit → fallback');
+});
+
+test('splitting an axis never moves a silhouette by itself', () => {
+  for (const m of METHOD_IDS) {
+    const s = METHODS[m].scores;
+    for (const id of ['tc', 'tc.1', 'sa', 'sa.1']) {
+      const [a, b] = childrenOf(id);
+      close(readingOf(s, id), (readingOf(s, a) + readingOf(s, b)) / 2);
+    }
+  }
+});
+
+test('dragging a handle is pure and drops the readings below it', () => {
+  const before = { 'tc.1.1': 0.8, 'tc.1.2': 0.4, 'sa.1': 0.3 };
+  const after = setReading(before, 'tc.1', 0.9);
+  assert.deepEqual(before, { 'tc.1.1': 0.8, 'tc.1.2': 0.4, 'sa.1': 0.3 }, 'input untouched');
+  assert.deepEqual(after, { 'sa.1': 0.3, 'tc.1': 0.9 });
+  assert.equal(readingOf(after, 'tc.1'), 0.9, 'the handle lands where it was dragged');
+  assert.equal(readingOf(after, 'tc.1.1'), 0.9, 'and its children now follow it');
+  // out-of-range drags are clamped, and a sibling family is left alone
+  assert.equal(readingOf(setReading(before, 'tc.1.1', 2), 'tc.1.1'), 1);
+  assert.equal(readingOf(setReading(before, 'tc.1.1', -1), 'tc.1.1'), 0);
+  assert.equal(setReading(before, 'tc.1.1', 0.5)['tc.1.2'], 0.4);
+});
+
+test('sortIds walks the roots in order, then each lineage depth-first', () => {
+  assert.deepEqual(sortIds(['sa.1', 'tc.2.1', 'tc', 'sa']), ['tc', 'tc.2.1', 'sa', 'sa.1']);
+});
+
+test('readingsBlock round-trips: every reading appears, keyed by id', () => {
+  const block = readingsBlock({ vla: { 'tc.1.1': 0.8 }, rl: { 'sa.2': 0.25 } });
+  assert.match(block, /vla: \{/);
+  assert.match(block, /'tc\.1\.1':\s+0\.80,\s+\/\/ Observability/);
+  assert.match(block, /'sa\.2':\s+0\.25,\s+\/\/ Self-supervising/);
 });

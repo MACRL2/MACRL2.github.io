@@ -14,7 +14,7 @@
 <div id="log">booting…</div>
 <script type="module" src="/static/demo-kit/kit.js"></script>
 <script type="module">
-import { visibleAxes, angleFor, codeOf } from '/static/demos/autonomy-radar-data.js';
+import { visibleAxes, angleFor, codeOf, METHODS, readingOf } from '/static/demos/autonomy-radar-data.js';
 import { Theme } from '/static/demo-kit/theme.js';
 
 if (location.search.includes('headless')) {
@@ -62,16 +62,18 @@ const codes = () => [...document.querySelectorAll('.radar-code')].map(n => n.tex
     clientX: r.left + cx + Math.cos(angle) * rad,
     clientY: r.top + cy + Math.sin(angle) * rad, bubbles: true, pointerId: 1 }));
 
-  moveAt(angleFor(1, 2), R * 0.7); await wait(30);
+  // aim at the split affordance on the rim: mid-spoke now belongs to the
+  // method handles, which take the pointer before the axis does
+  moveAt(angleFor(1, 2), R * 0.98); await wait(30);
   ok('hover explains the split', !$('.rlmap-tip').hidden && /split into SA\.1 and SA\.2/.test($('.rlmap-tip').textContent),
      JSON.stringify($('.rlmap-tip').textContent.slice(0, 80)));
 
-  clickAt(angleFor(1, 2), R * 0.7);
+  clickAt(angleFor(1, 2), R * 0.98);
   await wait(1200);
   ok('clicking an axis gives a three-pronged wheel', codes().join(',') === 'TC,SA.1,SA.2', JSON.stringify(codes()));
 
   // and the spokes have actually rotated to thirds
-  clickAt(angleFor(1, 3), R * 0.7);           // SA.1 now sits at slot 1 of 3
+  clickAt(angleFor(1, 3), R * 0.98);           // SA.1 now sits at slot 1 of 3
   await wait(1200);
   ok('the second split lands on the axis now in that slot',
      codes().join(',') === 'TC,SA.1.1,SA.1.2,SA.2', JSON.stringify(codes()));
@@ -101,8 +103,53 @@ const codes = () => [...document.querySelectorAll('.radar-code')].map(n => n.tex
   ok('auto-split folds back too (it cycles)', seenFold);
   ok('it is still running after a full cycle', codes().length >= 2);
 
-  $('[data-act="ghost"]').click(); await wait(60);
-  ok('example silhouette toggles', /is-on/.test($('[data-act="ghost"]').className));
+  // ── methods: silhouettes, drag, export ────────────────────────────────
+  $('[data-act="auto"]').click(); await wait(60);        // back to manual
+  $('[data-act="reset"]').click(); await wait(1200);
+  const reads = () => [...document.querySelectorAll('.radar-chip')]
+    .map(li => [li.dataset.axis, [...li.querySelectorAll('.radar-read')].map(n => n.textContent)]);
+  ok('both methods start shown', reads()[0][1].length === 2, JSON.stringify(reads()));
+  // TC is the average of its leaves, so the chip shows the derived reading
+  const tcVla = readingOf(METHODS.vla.scores, 'tc');
+  ok('a root reading is derived from the leaves under it',
+     reads()[0][1][0] === tcVla.toFixed(2).replace(/^0/, ''),
+     `${reads()[0][1][0]} vs ${tcVla}`);
+
+  $('[data-act="method"][data-method="rl"]').click(); await wait(40);
+  ok('a method can be hidden', reads()[0][1].length === 1, JSON.stringify(reads()[0]));
+  $('[data-act="method"][data-method="rl"]').click(); await wait(40);
+  ok('and shown again', reads()[0][1].length === 2);
+
+  // drag VLA's handle on TC (slot 0, straight up) out to the rim
+  const pe = (type, angle, rad) => canvas.dispatchEvent(new PointerEvent(type, {
+    clientX: r.left + cx + Math.cos(angle) * rad,
+    clientY: r.top + cy + Math.sin(angle) * rad, bubbles: true, pointerId: 1 }));
+  const up = angleFor(0, 2);
+  pe('pointermove', up, R * tcVla); await wait(40);
+  ok('hovering a handle names the method and the axis',
+     /VLA · Task Complexity/.test($('.rlmap-tip').textContent), JSON.stringify($('.rlmap-tip').textContent.slice(0, 60)));
+
+  pe('pointerdown', up, R * tcVla);
+  pe('pointermove', up, R * 0.9);
+  pe('pointerup', up, R * 0.9);
+  await wait(60);
+  ok('dragging a handle moves that reading', reads()[0][1][0] === '.90',
+     JSON.stringify(reads()[0]));
+  ok('the drag is announced', /VLA · Task Complexity = \.90/.test($('.rlmap-status').textContent),
+     JSON.stringify($('.rlmap-status').textContent.slice(0, 80)));
+  ok('the drag did not also split the axis', codes().join(',') === 'TC,SA', JSON.stringify(codes()));
+
+  // and the children inherit the claim just made about their parent
+  clickAt(angleFor(0, 2), R * 0.999); await wait(1200);
+  ok('splitting after a drag hands the reading down',
+     codes().join(',') === 'TC.1,TC.2,SA' && reads()[0][1][0] === '.90',
+     JSON.stringify([codes(), reads()[0]]));
+
+  try { Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true }); } catch {}
+  $('[data-act="copy"]').click(); await wait(200);
+  const exported = $('.rlmap-export')?.value || '';
+  ok('copy readings exports the dragged value', /'tc':\s+0\.90/.test(exported),
+     JSON.stringify(exported.slice(0, 120)));
 
   cleanup();
   await wait(200);

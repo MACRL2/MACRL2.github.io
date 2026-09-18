@@ -135,12 +135,113 @@ export function colorOf(id, dark = false) {
   return `oklch(${L.toFixed(3)} ${Math.max(C, 0.05).toFixed(3)} ${hueOf(id).toFixed(1)})`;
 }
 
-/**
- * A placeholder reading for the example silhouette — deterministic per axis so
- * the shape is stable across frames. Real problems and methods land here later.
+/* ── Methods on the wheel ──────────────────────────────────────────────────
+ *
+ * A method is a silhouette: one reading in [0,1] per axis, meaning how much of
+ * that axis the method can absorb — how much observability it copes with, how
+ * much of the data it supplies itself. Readings are stored at whatever depth
+ * the claim was actually made at, and every other axis is derived:
+ *
+ *   - an axis with a stored reading uses it;
+ *   - an axis with stored readings *below* it averages its two children
+ *     (so splitting an axis never moves the silhouette by itself);
+ *   - anything else inherits the nearest ancestor that has one.
+ *
+ * So the wheel can be split to any depth and every method still has a value on
+ * every spoke. Dragging a handle calls `setReading`, which drops the readings
+ * underneath that axis — the claim you just made is now the finest one there.
  */
-export function sampleValue(id) {
-  let h = 2166136261;
-  for (let i = 0; i < id.length; i++) { h ^= id.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return 0.35 + ((h >>> 0) % 1000) / 1000 * 0.55;
+
+export const METHOD_IDS = ['vla', 'rl'];
+
+export const METHODS = {
+  vla: {
+    label: 'VLA',
+    full: 'Vision-language-action models',
+    hue: 330,
+    blurb: 'One network from pixels and words to motor commands, trained on human demonstrations.',
+    scores: {
+      'tc.1.1': 0.80,   // Observability — raw pixels + language is the native input
+      'tc.1.2': 0.55,   // Decision Authority — acts end to end, inside a demonstrated envelope
+      'tc.2.1': 0.35,   // Horizon — long-horizon drift is the standing failure
+      'tc.2.2': 0.40,   // Dynamics — contact-rich, fast dynamics are thin in demonstrations
+      'sa.1': 0.25,     // Data Availability — needs an enormous teleoperated corpus
+      'sa.2': 0.20,     // Self-supervising — no signal of its own to improve against
+    },
+  },
+  rl: {
+    label: 'RL',
+    full: 'Reinforcement learning',
+    hue: 155,
+    blurb: 'A reward and a rollout budget: the policy finds the behavior by trying.',
+    scores: {
+      'tc.1.1': 0.40,   // Observability — partial observation needs heavy engineering
+      'tc.1.2': 0.78,   // Decision Authority — full closed-loop authority by construction
+      'tc.2.1': 0.55,   // Horizon — credit assignment is hard, but this is the tool for it
+      'tc.2.2': 0.82,   // Dynamics — thrives where the dynamics are fast and simulable
+      'sa.1': 0.80,     // Data Availability — generates its own experience
+      'sa.2': 0.68,     // Self-supervising — improves on its own, once someone writes the reward
+    },
+  },
+};
+
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
+
+/** Does `scores` say anything strictly below `id`? */
+export const hasFinerReading = (scores, id) =>
+  Object.keys(scores).some((k) => k.startsWith(`${id}.`));
+
+/** The reading a method shows on `id`, derived per the rules above. */
+export function readingOf(scores, id, fallback = 0.5) {
+  if (id in scores) return scores[id];
+  if (canExpand(id) && hasFinerReading(scores, id)) {
+    const [a, b] = childrenOf(id);
+    return (readingOf(scores, a, fallback) + readingOf(scores, b, fallback)) / 2;
+  }
+  for (const anc of pathOf(id).slice(0, -1).reverse()) if (anc in scores) return scores[anc];
+  return fallback;
+}
+
+/**
+ * Claim `value` on `id`. Pure: returns new scores. Readings below `id` are
+ * dropped, so the handle lands exactly where it was dragged and everything
+ * underneath inherits it.
+ */
+export function setReading(scores, id, value) {
+  const next = {};
+  for (const [k, v] of Object.entries(scores)) {
+    if (k !== id && !k.startsWith(`${id}.`)) next[k] = v;
+  }
+  next[id] = clamp01(value);
+  return next;
+}
+
+/** Method color — its own layer, deliberately off the axes' two lineages. */
+export function methodColor(id, dark = false) {
+  const hue = METHODS[id]?.hue ?? 320;
+  return dark ? `oklch(0.815 0.155 ${hue})` : `oklch(0.545 0.180 ${hue})`;
+}
+
+/** Roots in ROOT_IDS order, then depth-first down each lineage. */
+export function sortIds(ids) {
+  const rank = (id) => ROOT_IDS.indexOf(rootOf(id));
+  return [...ids].sort((a, b) => rank(a) - rank(b) || (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/**
+ * The `scores` literals, ready to paste back over the ones above — the same
+ * re-argue-the-placements loop the projection map uses.
+ */
+export function readingsBlock(readings) {
+  const lines = [];
+  for (const m of METHOD_IDS) {
+    const scores = readings[m] || readings.get?.(m) || {};
+    lines.push(`  ${m}: {`, `    // ...keep label / full / hue / blurb as they are`, '    scores: {');
+    for (const id of sortIds(Object.keys(scores))) {
+      const pad = `'${id}':`.padEnd(12);
+      lines.push(`      ${pad} ${scores[id].toFixed(2)},   // ${displayOf(id)}`);
+    }
+    lines.push('    },', '  },');
+  }
+  return lines.join('\n');
 }
