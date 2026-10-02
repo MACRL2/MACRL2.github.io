@@ -3,6 +3,7 @@ title: The projection map
 description: An earlier framing — robot learning as a space, and the axes that project it away.
 hide_from_toc: true
 interactive: true
+ai_generated: true
 ---
 
 <p class="backlink"><a href="/">← the radar</a></p>

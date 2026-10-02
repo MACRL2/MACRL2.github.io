@@ -5,6 +5,15 @@ nav_order: 35
 part: "Part II — Branch A · Learning from Demonstrations"
 summary: The natural first idea — treat driving as supervised learning — looks perfect offline and drifts off the road in deployment. Watch both happen.
 interactive: true
+ai_generated: true
+volume:
+  from: Engineered pipeline
+  to: Behavior cloning
+  axes:
+    Observability: [0.7, 1.7]
+    Unwritten objectives: [0.6, 1.6]
+    Distribution shift: [1.6, 0.45]
+    Interpretability: [1.6, 0.6]
 ---
 
 # Cloning the Driver

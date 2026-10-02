@@ -11,7 +11,13 @@
 {% endblock %}
 
 {% block content %}
-  <article class="page-content">
+  {% if page.has_ai %}
+  <p class="ai-legend">
+    {% if page.ai_generated %}This page is AI-generated: its text is set in <span class="ai-key">this color</span>.
+    {% else %}Text in <span class="ai-key">this color</span>, marked by a rule in the margin, is AI-generated.{% endif %}
+  </p>
+  {% endif %}
+  <article class="page-content{% if page.ai_generated %} ai{% endif %}">
 {{ page.body_html }}
   </article>
 

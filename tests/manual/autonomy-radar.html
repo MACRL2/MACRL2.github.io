@@ -1,10 +1,10 @@
 <!doctype html><html><head><meta charset="utf-8">
-<!-- Self-checking spot-check for the landing-page radar. Serve the REPO ROOT
+<!-- Self-checking spot-check for the landing-page wheel. Serve the REPO ROOT
      (python3 -m http.server) and open /tests/manual/autonomy-radar.html —
      every line below should read PASS. Add ?headless to drive
      requestAnimationFrame from timers, which is what headless Chrome needs
      (it produces no frames):
-       google-chrome --headless=new --virtual-time-budget=40000 \
+       google-chrome --headless=new --virtual-time-budget=60000 \
          --dump-dom 'http://127.0.0.1:8000/tests/manual/autonomy-radar.html?headless' -->
 <link rel="stylesheet" href="/styles.css">
 <style>body{margin:2rem;max-width:70rem}#log{white-space:pre-wrap;font:12px var(--mono,monospace)}</style>
@@ -14,7 +14,8 @@
 <div id="log">booting…</div>
 <script type="module" src="/static/demo-kit/kit.js"></script>
 <script type="module">
-import { visibleAxes, angleFor, codeOf, METHODS, readingOf } from '/static/demos/autonomy-radar-data.js';
+import { angleFor, SYSTEMS, SYSTEM_IDS, readingOf } from '/static/demos/autonomy-radar-data.js';
+import { sharesOf } from '/static/demos/volume-math.js';
 import { Theme } from '/static/demo-kit/theme.js';
 
 if (location.search.includes('headless')) {
@@ -34,6 +35,8 @@ const ok = (name, cond, extra = '') => { out.push(`${cond ? 'PASS' : 'FAIL'} ${n
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 const $ = (s) => document.querySelector(s);
 const codes = () => [...document.querySelectorAll('.radar-code')].map(n => n.textContent);
+const shares = () => Object.fromEntries([...document.querySelectorAll('.radar-chip')]
+  .map(li => [li.dataset.axis, li.querySelector('.radar-read')?.textContent]));
 
 (async () => { try {
   let mountFn = null;
@@ -42,120 +45,116 @@ const codes = () => [...document.querySelectorAll('.radar-code')].map(n => n.tex
   await import('/static/demos/autonomy-radar.js');
   ok('registers under its own name', typeof mountFn === 'function');
 
-  // autoplay off for a deterministic start
+  // tour off for a deterministic start
   const cleanup = mountFn(document.getElementById('host'), { autoplay: false }, { Theme });
   ok('returns a cleanup fn', typeof cleanup === 'function');
   await wait(60);
   ok('mounts', !!$('.radar'));
   const canvas = $('.radar canvas');
   ok('canvas sized', canvas.width > 100 && canvas.height > 100, `${canvas.width}x${canvas.height}`);
-  ok('opens on the two qualities', codes().join(',') === 'TC,SA', JSON.stringify(codes()));
+  ok('opens on the named axes', codes().join(',') === 'TC.1.1,TC.1.2,TC.2.1,TC.2.2,SA.1,SA.2', JSON.stringify(codes()));
+  ok('one button per system', document.querySelectorAll('[data-act="system"]').length === SYSTEM_IDS.length);
+  ok('names the system on the wheel', $('.radar-now').textContent.includes(SYSTEMS[SYSTEM_IDS[0]].full),
+     JSON.stringify($('.radar-now').textContent.slice(0, 60)));
 
-  // click the SA spoke: it points straight down when there are two axes
+  // geometry, mirroring fit() in the demo
   const r = canvas.getBoundingClientRect();
   const cx = r.width / 2, cy = r.height / 2;
-  const R = Math.max(70, Math.min(r.width * 0.5 - 172, r.height * 0.5 - 66)); // mirrors fit() in the demo
-  const clickAt = (angle, rad) => canvas.dispatchEvent(new MouseEvent('click', {
-    clientX: r.left + cx + Math.cos(angle) * rad,
-    clientY: r.top + cy + Math.sin(angle) * rad, bubbles: true }));
-  const moveAt = (angle, rad) => canvas.dispatchEvent(new PointerEvent('pointermove', {
+  const room = r.width < 560 ? 62 : 132;
+  const rho = Math.min(150, Math.max(30, Math.min(r.width / 2 - room, r.height / 2 - 46) / 2.15));
+  const LR = rho * 2.15;
+  const ev = (type, angle, rad, Ctor = PointerEvent) => canvas.dispatchEvent(new Ctor(type, {
     clientX: r.left + cx + Math.cos(angle) * rad,
     clientY: r.top + cy + Math.sin(angle) * rad, bubbles: true, pointerId: 1 }));
 
-  // aim at the split affordance on the rim: mid-spoke now belongs to the
-  // method handles, which take the pointer before the axis does
-  moveAt(angleFor(1, 2), R * 0.98); await wait(30);
-  ok('hover explains the split', !$('.rlmap-tip').hidden && /split into SA\.1 and SA\.2/.test($('.rlmap-tip').textContent),
+  // the axes are open: hovering far out along a spoke, past its label, still finds it
+  ev('pointermove', angleFor(0, 6), LR * 1.2); await wait(30);
+  ok('hover explains the split, even beyond the label', !$('.rlmap-tip').hidden &&
+     /split into TC\.1\.1\.1 and TC\.1\.1\.2/.test($('.rlmap-tip').textContent),
      JSON.stringify($('.rlmap-tip').textContent.slice(0, 80)));
 
-  clickAt(angleFor(1, 2), R * 0.98);
+  ev('click', angleFor(0, 6), LR, MouseEvent);
   await wait(1200);
-  ok('clicking an axis gives a three-pronged wheel', codes().join(',') === 'TC,SA.1,SA.2', JSON.stringify(codes()));
+  ok('clicking an axis splits it', codes().join(',') === 'TC.1.1.1,TC.1.1.2,TC.1.2,TC.2.1,TC.2.2,SA.1,SA.2', JSON.stringify(codes()));
+  ok('the children inherit the parent’s share', shares()['tc.1.1.1'] && shares()['tc.1.1.1'] === shares()['tc.1.1.2'],
+     JSON.stringify(shares()));
 
-  // and the spokes have actually rotated to thirds
-  clickAt(angleFor(1, 3), R * 0.98);           // SA.1 now sits at slot 1 of 3
+  // fold it back by clicking its lineage arc at the hub (TC.1.1 is depth 3)
+  ev('click', (angleFor(0, 7) + angleFor(1, 7)) / 2, 7 + 3 * 6, MouseEvent);
   await wait(1200);
-  ok('the second split lands on the axis now in that slot',
-     codes().join(',') === 'TC,SA.1.1,SA.1.2,SA.2', JSON.stringify(codes()));
-
-  // fold it back by clicking the lineage arc for SA.1 (ring at depth 2)
-  const bandR = R + 10 + (2 - 1) * (7 + 3);
-  clickAt(angleFor(1, 4) + Math.PI / 4 * 0.5, bandR);
-  await wait(1200);
-  ok('clicking a lineage arc folds that family back',
-     codes().join(',') === 'TC,SA.1,SA.2', JSON.stringify(codes()));
+  ok('clicking a hub arc folds that family back',
+     codes().join(',') === 'TC.1.1,TC.1.2,TC.2.1,TC.2.2,SA.1,SA.2', JSON.stringify(codes()));
 
   $('[data-act="reset"]').click(); await wait(1200);
   ok('fold back returns to the two qualities', codes().join(',') === 'TC,SA', JSON.stringify(codes()));
 
-  // autoplay: grows on its own, then folds back, endlessly
-  $('[data-act="auto"]').click();
-  ok('auto-split toggles on', /on/.test($('[data-act="auto"]').textContent));
-  let peak = 2, seenFold = false, prev = 2;
-  for (let i = 0; i < 40; i++) {
-    await wait(500);
-    const n = codes().length;
-    peak = Math.max(peak, n);
-    if (n < prev) seenFold = true;
-    prev = n;
-  }
-  ok('auto-split grows the wheel', peak >= 6, `peak ${peak} axes`);
-  ok('auto-split folds back too (it cycles)', seenFold);
-  ok('it is still running after a full cycle', codes().length >= 2);
+  // ── systems ────────────────────────────────────────────────────────────
+  const [first, second] = SYSTEM_IDS;
+  $(`[data-act="system"][data-system="${second}"]`).click(); await wait(1600);
+  ok('picking a system puts its volume on the wheel', $('.radar-now').textContent.includes(SYSTEMS[second].full)
+     && $(`[data-system="${second}"]`).classList.contains('is-on'));
+  const want = sharesOf([angleFor(0, 2), angleFor(1, 2)],
+    ['tc', 'sa'].map((id) => readingOf(SYSTEMS[second].scores, id)));
+  ok('its shares are its readings at the fixed volume',
+     shares().tc === `×${want[0].toFixed(1)}` && shares().sa === `×${want[1].toFixed(1)}`,
+     JSON.stringify([shares(), want]));
 
-  // ── methods: silhouettes, drag, export ────────────────────────────────
-  $('[data-act="auto"]').click(); await wait(60);        // back to manual
-  $('[data-act="reset"]').click(); await wait(1200);
-  const reads = () => [...document.querySelectorAll('.radar-chip')]
-    .map(li => [li.dataset.axis, [...li.querySelectorAll('.radar-read')].map(n => n.textContent)]);
-  ok('both methods start shown', reads()[0][1].length === 2, JSON.stringify(reads()));
-  // TC is the average of its leaves, so the chip shows the derived reading
-  const tcVla = readingOf(METHODS.vla.scores, 'tc');
-  ok('a root reading is derived from the leaves under it',
-     reads()[0][1][0] === tcVla.toFixed(2).replace(/^0/, ''),
-     `${reads()[0][1][0]} vs ${tcVla}`);
+  $(`[data-act="system"][data-system="${first}"]`).click(); await wait(1600);
 
-  $('[data-act="method"][data-method="rl"]').click(); await wait(40);
-  ok('a method can be hidden', reads()[0][1].length === 1, JSON.stringify(reads()[0]));
-  $('[data-act="method"][data-method="rl"]').click(); await wait(40);
-  ok('and shown again', reads()[0][1].length === 2);
-
-  // drag VLA's handle on TC (slot 0, straight up) out to the rim
-  const pe = (type, angle, rad) => canvas.dispatchEvent(new PointerEvent(type, {
-    clientX: r.left + cx + Math.cos(angle) * rad,
-    clientY: r.top + cy + Math.sin(angle) * rad, bubbles: true, pointerId: 1 }));
+  // drag the first system's TC handle (straight up) outward
   const up = angleFor(0, 2);
-  pe('pointermove', up, R * tcVla); await wait(40);
-  ok('hovering a handle names the method and the axis',
-     /VLA · Task Complexity/.test($('.rlmap-tip').textContent), JSON.stringify($('.rlmap-tip').textContent.slice(0, 60)));
+  const tc0 = parseFloat(shares().tc.slice(1)), sa0 = parseFloat(shares().sa.slice(1));
+  const tcExact = sharesOf([angleFor(0, 2), angleFor(1, 2)],
+    ['tc', 'sa'].map((id) => readingOf(SYSTEMS[first].scores, id)))[0];
+  ev('pointermove', up, rho * tcExact); await wait(40);
+  ok('hovering a handle names the system, the axis, and the bound',
+     new RegExp(`${SYSTEMS[first].label} · Task Complexity`).test($('.rlmap-tip').textContent)
+       && /at most ×/.test($('.rlmap-tip').textContent),
+     JSON.stringify($('.rlmap-tip').textContent.slice(0, 120)));
 
-  pe('pointerdown', up, R * tcVla);
-  pe('pointermove', up, R * 0.9);
-  pe('pointerup', up, R * 0.9);
+  ev('pointerdown', up, rho * tcExact);
+  ev('pointermove', up, rho * 1.5);
+  ev('pointerup', up, rho * 1.5);
   await wait(60);
-  ok('dragging a handle moves that reading', reads()[0][1][0] === '.90',
-     JSON.stringify(reads()[0]));
-  ok('the drag is announced', /VLA · Task Complexity = \.90/.test($('.rlmap-status').textContent),
+  ok('dragging a handle out moves that share there', shares().tc === '×1.5', JSON.stringify(shares()));
+  ok('and the other axis pays for it', parseFloat(shares().sa.slice(1)) < sa0, `${sa0} → ${shares().sa}`);
+  ok('the drag is announced', /Same volume/.test($('.rlmap-status').textContent),
      JSON.stringify($('.rlmap-status').textContent.slice(0, 80)));
   ok('the drag did not also split the axis', codes().join(',') === 'TC,SA', JSON.stringify(codes()));
 
-  // and the children inherit the claim just made about their parent
-  clickAt(angleFor(0, 2), R * 0.999); await wait(1200);
-  ok('splitting after a drag hands the reading down',
-     codes().join(',') === 'TC.1,TC.2,SA' && reads()[0][1][0] === '.90',
-     JSON.stringify([codes(), reads()[0]]));
-
+  // the volume is fixed: tc and sa shares satisfy the two-spoke area identity
+  // ½·π·(13(a²+b²) + 9ab)/35·2 = π  ⇔  13(a²+b²) + 9ab = 35, at an even spread of 1
   try { Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true }); } catch {}
   $('[data-act="copy"]').click(); await wait(200);
   const exported = $('.rlmap-export')?.value || '';
-  ok('copy readings exports the dragged value', /'tc':\s+0\.90/.test(exported),
-     JSON.stringify(exported.slice(0, 120)));
+  const block = exported.split(`  ${second}: {`)[0];          // the first system's scores
+  const parsed = Object.fromEntries([...block.matchAll(/'([a-z.\d]+)':\s+([\d.]+)/g)].map((m) => [m[1], +m[2]]));
+  ok('copy readings exports the dragged claim', parsed.tc > 0, JSON.stringify(exported.slice(0, 160)));
+  const [a, b] = sharesOf([angleFor(0, 2), angleFor(1, 2)], [readingOf(parsed, 'tc'), readingOf(parsed, 'sa')]);
+  ok('and the exported shape is the one dragged, at the same volume',
+     Math.abs(a - 1.5) < 0.03 && Math.abs(13 * (a * a + b * b) + 9 * a * b - 35) < 0.05,
+     `${a.toFixed(3)}, ${b.toFixed(3)}`);
+
+  $('[data-act="compare"]').click(); await wait(40);
+  ok('all at once toggles', $('[data-act="compare"]').classList.contains('is-on'));
+  $('[data-act="compare"]').click(); await wait(40);
+
+  // ── the tour ───────────────────────────────────────────────────────────
+  $('[data-act="tour"]').click();
+  ok('the tour toggles on', /on/.test($('[data-act="tour"]').textContent));
+  const seen = new Set();
+  for (let i = 0; i < 24; i++) {
+    await wait(500);
+    const s = SYSTEM_IDS.find((m) => $('.radar-now').textContent.includes(SYSTEMS[m].full));
+    if (s) seen.add(s);
+  }
+  ok('the tour moves the volume from system to system', seen.size >= 3, `saw ${[...seen].join(', ')}`);
 
   cleanup();
-  await wait(200);
-  const after = codes().length;
-  await wait(1200);
-  ok('cleanup stops the animation', codes().length === after, `${after} → ${codes().length}`);
+  await wait(100);
+  const after = $('.radar-now').textContent;
+  await wait(4500);
+  ok('cleanup stops the tour', $('.radar-now').textContent === after);
 
   out.push(errs.length ? 'FAIL console/runtime errors: ' + errs.join(' | ') : 'PASS no console or runtime errors');
   flush();

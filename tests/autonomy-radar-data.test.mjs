@@ -4,9 +4,10 @@ import {
   AXES, ROOT_IDS, MAX_DEPTH,
   visibleAxes, openGroups, childrenOf, parentOf, pathOf, depthOf, canExpand, rootOf,
   codeOf, displayOf, isNamed, angleFor, angleDelta, hueOf, colorOf,
-  METHOD_IDS, METHODS, readingOf, setReading, hasFinerReading, methodColor,
-  readingsBlock, sortIds,
+  SYSTEM_IDS, SYSTEMS, readingOf, setReading, hasFinerReading, systemColor,
+  readingsBlock, sortIds, namedFrontier, axisFor, rescaleReadings, MIN_READING,
 } from '../static/demos/autonomy-radar-data.js';
+import { areaOf, fitTo } from '../static/demos/volume-math.js';
 
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} !~ ${b}`);
 
@@ -97,21 +98,54 @@ test('color encodes lineage: siblings split their parent hue, families stay apar
   assert.notEqual(colorOf('sa.1', false), colorOf('sa.1', true), 'light and dark differ');
 });
 
-test('every method is scored on the named leaves', () => {
-  assert.deepEqual(METHOD_IDS, Object.keys(METHODS));
-  for (const m of METHOD_IDS) {
-    const { label, hue, scores } = METHODS[m];
-    assert.ok(label && typeof hue === 'number');
+test('every system is scored on the named leaves, with positive weights', () => {
+  assert.deepEqual(SYSTEM_IDS, Object.keys(SYSTEMS));
+  assert.ok(SYSTEM_IDS.length >= 2, 'a volume only means something next to another');
+  for (const m of SYSTEM_IDS) {
+    const { label, full, method, hue, scores } = SYSTEMS[m];
+    assert.ok(label && full && method && typeof hue === 'number');
     assert.ok(Object.keys(scores).length >= 4, `${m} says something`);
     for (const [id, v] of Object.entries(scores)) {
-      assert.ok(v >= 0 && v <= 1, `${m}.${id} is a reading`);
+      assert.ok(v > 0 && Number.isFinite(v), `${m}.${id} is a relative weight`);
       assert.ok(ROOT_IDS.includes(rootOf(id)), 'scored on a real lineage');
       assert.ok(depthOf(id) <= MAX_DEPTH);
     }
   }
-  assert.match(methodColor('vla', false), /^oklch\(/);
-  assert.notEqual(methodColor('vla', false), methodColor('vla', true));
-  assert.notEqual(methodColor('vla', false), methodColor('rl', false));
+  const [a, b] = SYSTEM_IDS;
+  assert.match(systemColor(a, false), /^oklch\(/);
+  assert.notEqual(systemColor(a, false), systemColor(a, true));
+  assert.notEqual(systemColor(a, false), systemColor(b, false));
+});
+
+test('systems hold one volume: same area, different shapes, at any split', () => {
+  const A = Math.PI;
+  for (const open of [new Set(), new Set(['sa']), namedFrontier(), new Set(['tc', 'tc.1', 'tc.1.1', 'sa'])]) {
+    const ids = visibleAxes(open);
+    const angles = ids.map((_, i) => angleFor(i, ids.length));
+    const shapes = SYSTEM_IDS.map((m) => fitTo(angles, ids.map((id) => readingOf(SYSTEMS[m].scores, id)), A));
+    for (const s of shapes) close(areaOf(angles, s), A);
+    if (ids.length > 2) {
+      const [s0, s1] = shapes;
+      assert.ok(s0.some((r, i) => Math.abs(r - s1[i]) > 0.05), 'and they really are different shapes');
+    }
+  }
+});
+
+test('the wheel opens on the named axes', () => {
+  const open = namedFrontier();
+  for (const id of open) assert.ok(childrenOf(id).some(isNamed), `${id} has named children`);
+  const vis = visibleAxes(open);
+  assert.ok(vis.every(isNamed), JSON.stringify(vis));
+  assert.ok(vis.length >= 4);
+});
+
+test('a unit can find a wheel axis by id or by name', () => {
+  assert.equal(axisFor('tc.2.1'), 'tc.2.1');
+  assert.equal(axisFor('Horizon'), 'tc.2.1');
+  assert.equal(axisFor('  data availability '), 'sa.1');
+  assert.equal(axisFor('sa.2.1'), 'sa.2.1', 'an unnamed axis still has an id');
+  assert.equal(axisFor('Expert time'), null, 'a unit-only axis is not on the wheel');
+  assert.equal(axisFor('zz.1'), null);
 });
 
 test('a stored reading is used as-is', () => {
@@ -135,9 +169,9 @@ test('an unscored axis inherits its nearest scored ancestor', () => {
   assert.equal(readingOf(s, 'sa.2', 0.25), 0.25, 'nothing to inherit → fallback');
 });
 
-test('splitting an axis never moves a silhouette by itself', () => {
-  for (const m of METHOD_IDS) {
-    const s = METHODS[m].scores;
+test('a parent always reads as the mean of its children', () => {
+  for (const m of SYSTEM_IDS) {
+    const s = SYSTEMS[m].scores;
     for (const id of ['tc', 'tc.1', 'sa', 'sa.1']) {
       const [a, b] = childrenOf(id);
       close(readingOf(s, id), (readingOf(s, a) + readingOf(s, b)) / 2);
@@ -152,10 +186,19 @@ test('dragging a handle is pure and drops the readings below it', () => {
   assert.deepEqual(after, { 'sa.1': 0.3, 'tc.1': 0.9 });
   assert.equal(readingOf(after, 'tc.1'), 0.9, 'the handle lands where it was dragged');
   assert.equal(readingOf(after, 'tc.1.1'), 0.9, 'and its children now follow it');
-  // out-of-range drags are clamped, and a sibling family is left alone
-  assert.equal(readingOf(setReading(before, 'tc.1.1', 2), 'tc.1.1'), 1);
-  assert.equal(readingOf(setReading(before, 'tc.1.1', -1), 'tc.1.1'), 0);
+  // readings are unbounded above, kept off zero below, and a sibling family is left alone
+  assert.equal(readingOf(setReading(before, 'tc.1.1', 7), 'tc.1.1'), 7);
+  assert.equal(readingOf(setReading(before, 'tc.1.1', -1), 'tc.1.1'), MIN_READING);
   assert.equal(setReading(before, 'tc.1.1', 0.5)['tc.1.2'], 0.4);
+});
+
+test('rescaling readings tidies the numbers without moving the shape', () => {
+  const s = { 'tc.1': 4, 'tc.2': 2, sa: 6 };
+  const ids = ['tc.1', 'tc.2', 'sa'];
+  const out = rescaleReadings(s, ids);
+  close(ids.reduce((t, id) => t + readingOf(out, id), 0) / ids.length, 1);
+  ids.forEach((id) => close(readingOf(out, id) / readingOf(out, 'sa'), readingOf(s, id) / readingOf(s, 'sa')));
+  assert.deepEqual(s, { 'tc.1': 4, 'tc.2': 2, sa: 6 }, 'input untouched');
 });
 
 test('sortIds walks the roots in order, then each lineage depth-first', () => {
@@ -163,9 +206,9 @@ test('sortIds walks the roots in order, then each lineage depth-first', () => {
 });
 
 test('readingsBlock round-trips: every reading appears, keyed by id', () => {
-  const [first, second] = METHOD_IDS;
+  const [first, second] = SYSTEM_IDS;
   const block = readingsBlock({ [first]: { 'tc.1.1': 0.8 }, [second]: { 'sa.2': 0.25 } });
-  for (const m of METHOD_IDS) assert.match(block, new RegExp(`${m}: \\{`), `${m} is exported`);
+  for (const m of SYSTEM_IDS) assert.match(block, new RegExp(`${m}: \\{`), `${m} is exported`);
   assert.match(block, /'tc\.1\.1':\s+0\.80,\s+\/\/ /);
   assert.match(block, /'sa\.2':\s+0\.25,\s+\/\/ /);
   // the trailing comment is the axis's current display name, whatever it is

@@ -1,44 +1,70 @@
 ---
 title: Home
-description: Task Complexity and System Autonomy — the two qualities, the axes hiding inside them, and where VLA and RL sit on each.
+description: Task Complexity and System Autonomy — open-ended axes, one fixed volume of capability, and how every system we build only moves it around.
 interactive: true
 ---
 
-Building a robot that works is an act of interdisciplinary bookkeeping: you have
-to model a system, control it, perceive a scene, and say what "good" even means
-— all at once, and all under the distribution your own policy drags you into.
+# Preface: A Roboticist Buys Lunch from a Simplex
 
-This is a **deployment-first** course. Each chapter starts from a thing that
-breaks in the field, then reaches for the concept that explains it. We treat
-statistical learning, **online learning**, reinforcement learning, and control
-theory as one framework rather than four literatures — because in robotics they
-are answering one question together.
+<div class="by" data-author="than">
 
-The organizing idea is small enough to state on the home page:
+Robotics, or "physical Artificial Intelligence (AI)", is perhaps the oldest field of AI research. Its history goes as far as [4th century BC](https://en.wikipedia.org/wiki/Automaton). As we experience inherent wonder about the world and beyond, so too do we experience wonder about the internal gears which drive us and others we know.
 
-> Every method here is a choice of a **loss** and a **distribution** to evaluate
-> it under, and every failure is those two disagreeing. Interaction is how you
-> make them agree.
+As this field's markets try to convince you that its resolution is near, we implore readers to think deeply about its history and where we are now. What has _truly_ changed? What were the catalysts of flight? of vaccines? of space exploration?
 
-You'll uncover that idea by *doing* — sliders that move closed-loop poles, a
-decision tool that routes your own robot to the right algorithm, learners that
-teach themselves in front of you. Start with **Why Robot Learning**, or, if you
-want a system in your hands first, jump to the **cart-pole** and come back.
+Familiar to those in Machine Learning (ML), the <strong>No Free Lunch</strong> theorem contends: 
 
-<!-- Working draft. The axes below the first level are unnamed on purpose: the
-     radar animates the structure so the names can be chosen against it. -->
+> Any two optimization algorithms are equivalent when their performance is averaged across all possible problems.
 
-Humanity's search for artificial intelligence has been in service of these two qualities.
+In other words, there are always trade-offs. Roboticists, or engineers in general, are highly adept at balancing these trade-offs. As authors of this course, we believe our personal insight into robot learning is derived from our experience on robot systems, forming a holistic perspective which helps ground and map recent developments. We hope that this perspective can be useful to you as well.   
 
+</div>
+
+<div class="ai">
 <div class="demo" data-demo="autonomy-radar"></div>
 
 <aside class="callout" data-kind="try">
   <span class="callout-label">try this</span>
-  <p>Left alone it splits and folds on its own, endlessly. Click any axis to take
-  over: click a spoke to split it, click the arc outside a family to fold it back.
-  Then drag a method's handle along a spoke to move that reading — the two
-  silhouettes are opinions, and they are meant to be argued with.</p>
+  <p>Left alone, the wheel tours four systems, and the shaded volume changes
+  shape but never size. Pick a system and drag a handle outward: every other
+  axis gives ground to pay for it. Click a spoke to split that axis into the two
+  it stood for, or click the small arc at the hub to fold a family back.
+  <em>All at once</em> lays the systems over one another.</p>
 </aside>
+
+## A fixed volume
+
+The shaded shape is a volume of capability, and it is the same size for every
+system on the wheel: each one is rescaled to the same area. Systems differ in
+*where* their capability sits, never in *how much* of it there is. That is the
+claim this course keeps making. Most of what counts as progress in robotics
+moves the volume from one axis to another, buying autonomy with observability or
+horizon with an expert on call, rather than making it bigger.
+
+The axes have no rim. Nothing caps *Dynamics* or *Observability*, so a system
+can push as far along one as it likes, but only by spending the volume it holds
+everywhere else. Hover a handle for the limit: how far that system would reach
+if it gave up every other axis.
+
+## Systems, not methods
+
+Only a system gets a volume: one robot, one dataset, one budget, actually built.
+A method has no edges. Give RL an unlimited reward, simulator and compute and it
+encloses the whole wheel, which says nothing. The bound appears once a method is
+built into something.
+
+**π0** and **ANYmal parkour** are close to mirror images. π0 reads a cluttered
+home from pixels and a sentence, but every hour of its data was teleoperated.
+ANYmal supplies its own experience in simulation, but sees only geometry.
+**Atlas parkour** puts most of its volume into dynamics, and the **Waymo
+Driver** puts most of its into observability and horizon. None of them is
+bigger than the others.
+
+A reading is a relative weight: a claim about where a system's volume sits on
+one axis, made at whatever depth the wheel is split to. Readings have no units,
+since the wheel only uses the shape. Drag a handle and the axes underneath it
+inherit the new value. Nothing is saved: **copy readings** exports the whole set,
+ready to paste over the scores in `SYSTEMS` in `autonomy-radar-data.js`.
 
 ## The axes so far
 
@@ -56,20 +82,26 @@ structure stays arguable before the vocabulary is fixed.
 Names attach to position, so renaming one never disturbs the rest, and an
 unnamed axis keeps working underneath a named parent.
 
-## Two methods on it
+## Every unit carries one
 
-**VLA** takes pixels and words to motor commands, learned from human
-demonstrations. **RL** takes a reward and a rollout budget and finds the
-behavior by trying. They are close to opposites on this wheel: VLA reads a rich,
-partially observed world far better than RL does, and RL supplies its own
-experience where VLA has to be handed every hour of it.
+Each chapter opens with a small version of the same figure, drawn on just the
+axes its new approach moves along. The approach it starts from is dashed, the one
+it introduces is filled, and both have the same volume. Here is the choice
+between the course's two branches:
 
-A reading is a claim about how much of one axis a method absorbs, and it is made
-at whatever depth the wheel is split to — *Observability* is a sharper claim than
-*Task Complexity*. Drag a handle and the axes underneath it inherit the new
-value; split further and you can disagree with yourself in more detail. Nothing
-is saved: **copy readings** exports the whole set, ready to paste back over
-`METHODS` in `autonomy-radar-data.js`.
+```volume
+from: Branch A · demonstrations
+to: Branch B · simulator + reward
+axes:
+  Observability: [1.7, 0.6]
+  Dynamics: [0.5, 1.8]
+  Data Availability: [0.5, 1.5]
+  Unwritten objectives: [1.6, 0.5]
+```
+
+Watch for them as you read. Behavior cloning, DAgger, inverse RL and learning
+from a reward each move the volume somewhere new, and none of them make it
+bigger.
 
 Problems (loco-manipulation) come next, on the same wheel.
 
@@ -79,3 +111,5 @@ Problems (loco-manipulation) come next, on the same wheel.
   <em>Manual Supervision</em> against <em>Task Complexity</em> — lives on
   <a href="/projection-map/">the projection map</a>.</p>
 </aside>
+
+</div>

@@ -1,0 +1,85 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!-- Self-checking spot-check for a unit's volume figure. Serve the REPO ROOT
+     (python3 -m http.server) and open /tests/manual/capability-volume.html —
+     every line should read PASS. ?headless drives rAF from timers, as on
+     autonomy-radar.html. The figures stay on the page to look at. -->
+<link rel="stylesheet" href="/styles.css">
+<style>body{margin:2rem;max-width:60rem}#log{white-space:pre-wrap;font:12px var(--mono,monospace)}</style>
+</head><body>
+<!-- plain divs, NOT .demo: kit.js would otherwise mount a second copy on top -->
+<div id="a"></div>
+<div id="b"></div>
+<div id="bad"></div>
+<div id="log">booting…</div>
+<script type="module" src="/static/demo-kit/kit.js"></script>
+<script type="module">
+import { Theme } from '/static/demo-kit/theme.js';
+
+if (location.search.includes('headless')) {
+  window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 16);
+  window.cancelAnimationFrame = (id) => clearTimeout(id);
+}
+const errs = [];
+window.addEventListener('error', e => errs.push('ERROR ' + e.message));
+window.addEventListener('unhandledrejection', e => errs.push('REJECT ' + e.reason));
+const ce = console.error.bind(console);
+console.error = (...a) => { if (!String(a[0]).includes('[capability-volume]')) errs.push('console.error ' + a.join(' ')); ce(...a); };
+const out = [];
+const flush = () => document.getElementById('log').textContent = out.join('\n');
+const ok = (name, cond, extra = '') => { out.push(`${cond ? 'PASS' : 'FAIL'} ${name} ${extra}`); flush(); };
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+(async () => { try {
+  let mountFn = null;
+  const orig = window.Demos.register.bind(window.Demos);
+  window.Demos.register = (n, f) => { mountFn = f; orig(n, f); };
+  await import('/static/demos/capability-volume.js');
+  ok('registers under its own name', typeof mountFn === 'function');
+
+  // exactly what build.py emits for a front-matter `volume:`
+  const a = document.getElementById('a');
+  const stop = mountFn(a, {
+    from: 'Behavior cloning', to: 'DAgger',
+    axes: [['Distribution shift', 0.45, 1.7], ['Horizon', 0.6, 1.35],
+           ['Expert independence', 1.7, 0.4], ['Safe data collection', 1.5, 0.6]],
+  }, { Theme });
+  ok('returns a cleanup fn', typeof stop === 'function');
+  ok('draws an svg figure', !!a.querySelector('figure svg'));
+  ok('one open spoke per axis, and nothing encloses them',
+     a.querySelectorAll('.cvol-spoke').length === 4 && !a.querySelector('circle.cvol-rim'));
+  ok('labels every axis', [...a.querySelectorAll('.cvol-label')].map(t => t.textContent).join('|')
+     === 'Distribution shift|Horizon|Expert independence|Safe data collection');
+  ok('a wheel axis takes its lineage color', !!a.querySelectorAll('.cvol-label')[1].style.fill
+     && !a.querySelectorAll('.cvol-label')[0].style.fill);
+  ok('the caption names both approaches', /Behavior cloning\s*→\s*DAgger/.test(a.querySelector('.cvol-pair').textContent),
+     JSON.stringify(a.querySelector('.cvol-pair').textContent.replace(/\s+/g, ' ')));
+  ok('and says where the volume went', /same volume, moved toward Distribution shift, Horizon · away from Expert independence, Safe data collection/
+     .test(a.querySelector('.cvol-moved').textContent), JSON.stringify(a.querySelector('.cvol-moved').textContent));
+  const d0 = a.querySelector('.cvol-after').getAttribute('d');
+  ok('it starts from the dashed shape', d0 === a.querySelector('.cvol-before').getAttribute('d'));
+  await wait(2200);
+  const d1 = a.querySelector('.cvol-after').getAttribute('d');
+  ok('and morphs into the new one', d1 !== d0 && /^M/.test(d1));
+  ok('the arrows show up once it lands', [...a.querySelectorAll('.cvol-move')].every(g => g.style.opacity === '1'),
+     a.querySelectorAll('.cvol-move').length + ' arrows');
+  a.querySelector('svg').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  await wait(40);
+  ok('clicking replays it', a.querySelector('.cvol-after').getAttribute('d') === d0);
+
+  // a hand-written mapping, with one unchanged axis and a wheel id
+  const b = document.getElementById('b');
+  mountFn(b, { to: 'Something new', axes: { 'tc.2.2': [1, 2], Compute: [2, 1], Safety: 1 } }, { Theme });
+  ok('a mapping works, and a wheel id shows the wheel name',
+     [...b.querySelectorAll('.cvol-label')].map(t => t.textContent).join('|') === 'Dynamics|Compute|Safety');
+
+  const bad = document.getElementById('bad');
+  mountFn(bad, { axes: [['Only one', 1, 2]] }, { Theme });
+  ok('a broken spec says so in place instead of throwing', /at least two axes/.test(bad.textContent),
+     JSON.stringify(bad.textContent));
+
+  stop();
+  out.push(errs.length ? 'FAIL console/runtime errors: ' + errs.join(' | ') : 'PASS no console or runtime errors');
+  flush();
+} catch (e) { out.push('errs: ' + errs.join(' | ')); out.push('THREW ' + (e && e.stack || e)); flush(); }
+})();
+</script></body></html>

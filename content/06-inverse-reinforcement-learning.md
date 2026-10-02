@@ -5,6 +5,14 @@ nav_order: 37
 part: "Part II — Branch A · Learning from Demonstrations"
 summary: When the expert can leave demonstrations but cannot sit in the passenger seat, learn what made the driving good instead of cloning each steering command.
 interactive: true
+volume:
+  from: DAgger
+  to: Inverse RL
+  axes:
+    Expert independence: [0.4, 1.5]
+    Unseen plans: [0.6, 1.6]
+    Cheap training: [1.6, 0.45]
+    Model-free: [1.4, 0.6]
 ---
 
 # Learning What the Driver Wants
@@ -254,6 +262,16 @@ future scores. That extra solve is expensive, but it is also what makes the
 reward reusable for counterfactual plans.
 
 ## 4. Adversarial imitation: match occupancy without naming the reward
+
+```volume
+from: Deep IRL
+to: Adversarial imitation
+axes:
+  Auditable reward: [1.6, 0.4]
+  Training stability: [1.3, 0.6]
+  Cheap training: [0.5, 1.2]
+  Direct policy: [0.6, 1.5]
+```
 
 Often we want the final policy but do not need to inspect or transfer an
 explicit reward. **Adversarial imitation learning** (AIL) compresses the IRL

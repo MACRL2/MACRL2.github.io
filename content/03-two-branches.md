@@ -5,6 +5,14 @@ nav_order: 30
 part: "Part I — Orientation"
 summary: One decision tool, two tracks, and the single failure they share.
 interactive: true
+volume:
+  from: Branch A · demonstrations
+  to: Branch B · simulator + reward
+  axes:
+    Observability: [1.7, 0.6]
+    Dynamics: [0.5, 1.8]
+    Data Availability: [0.5, 1.5]
+    Unwritten objectives: [1.6, 0.5]
 ---
 
 # Two Questions, Two Branches
@@ -68,7 +76,7 @@ labels* — a human expert in Branch A, the world itself in Branch B.
 
 <aside class="callout" data-kind="try">
   <span class="callout-label">what breaks next</span>
-  <p>Enough overview. Pick up a real system from either branch:
+  <p class="ai">Enough overview. Pick up a real system from either branch:
   <a href="/04-behavior-cloning/">clone a driver</a> to watch Branch A's first
   step look perfect offline and then drift off the road, or balance the
   <a href="/02-cartpole/">cart-pole</a> to run Branch B in miniature — design a

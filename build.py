@@ -25,7 +25,23 @@ Front-matter (all optional)
     part: "Part I"        # optional grouping label in the TOC
     summary: One sentence shown beside the title in the TOC.
     hide_from_toc: true   # build the page but don't list it
+    ai_generated: true    # tint the whole page as AI-generated text
+    volume:               # this unit's capability volume, under the title
+      from: Behavior cloning
+      to: DAgger
+      axes:               # name: [before, after], clockwise from the top
+        Distribution shift: [0.4, 1.7]
+        Expert independence: [1.6, 0.4]
     ---
+
+    A ```volume fence holding the same YAML draws one mid-chapter instead.
+
+AI-generated text
+-----------------
+    Text written by an AI model is tinted on the page, with a legend at the
+    top. Tag a whole page with `ai_generated: true`, a run of Markdown with a
+    blank-line-padded `<div class="ai">` … `</div>`, or a phrase with
+    `<span class="ai">`. The legend appears on any page with a tag.
 
 Run
 ---
@@ -35,6 +51,7 @@ Run
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import shutil
 from pathlib import Path
@@ -42,7 +59,7 @@ from pathlib import Path
 import mistune
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 ROOT = Path(__file__).parent
 CONTENT_DIR = ROOT / "content"
@@ -78,6 +95,10 @@ _MATH_DISPLAY_RE = re.compile(r"\$\$.*?\$\$", re.DOTALL)
 _MATH_INLINE_RE = re.compile(r"\$(?:\\.|[^$\n])+?\$")
 _MATH_TOKEN_RE = re.compile(r"«MATH(\d+)»")
 
+# Any element carrying the `ai` class token marks AI-generated text, and a page
+# with at least one gets the legend that says what the tint means.
+_AI_CLASS_RE = re.compile(r"""\bclass\s*=\s*(["'])(?:[^"']*\s)?ai(?:\s[^"']*)?\1""")
+
 
 def render_markdown(body: str) -> str:
     """Markdown -> HTML with $…$/$$…$$ math passed through verbatim for KaTeX."""
@@ -91,6 +112,56 @@ def render_markdown(body: str) -> str:
     protected = _MATH_INLINE_RE.sub(_mask, protected)
     html = _MD(protected)
     return _MATH_TOKEN_RE.sub(lambda m: stash[int(m.group(1))], html)
+
+
+# A unit's capability volume (static/demos/capability-volume.js): the axes its
+# approach moves along, with the volume before and after, both drawn at the same
+# size. Configured as `volume:` in front-matter (drawn under the chapter title)
+# or as a ```volume fence of the same YAML (drawn where it sits); both become the
+# same demo placeholder, and either one makes the page interactive.
+_VOLUME_FENCE_RE = re.compile(r"^```volume[ \t]*\n(.*?)\n```[ \t]*$", re.DOTALL | re.MULTILINE)
+_H1_CLOSE_RE = re.compile(r"</h1>", re.IGNORECASE)
+
+
+def volume_div(spec, where: str) -> str:
+    """Check one volume spec and render its demo placeholder. Fails the build
+    loudly on a malformed spec, the way a typo'd template variable does."""
+    def bad(msg: str):
+        raise SystemExit(f"{where}: volume: {msg}")
+
+    if not isinstance(spec, dict) or not isinstance(spec.get("axes"), dict):
+        bad("needs an `axes:` mapping of `name: [before, after]`")
+    axes = []
+    for name, val in spec["axes"].items():
+        pair = val if isinstance(val, list) else [val, val]
+        ok = len(pair) == 2 and all(
+            isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0 for v in pair
+        )
+        if not ok:
+            bad(f"axis {name!r} needs one positive number or [before, after], got {val!r}")
+        axes.append([str(name), *pair])
+    if len(axes) < 2:
+        bad("needs at least two axes")
+    params = {k: str(spec[k]) for k in ("from", "to", "note") if spec.get(k)}
+    params["axes"] = axes  # a list, so the order around the figure survives JSON
+    data = escape(json.dumps(params, ensure_ascii=False))
+    return f'<div class="demo" data-demo="capability-volume" data-params="{data}"></div>'
+
+
+def place_volumes(meta: dict, body: str, where: str) -> tuple[str, str, bool]:
+    """Swap ```volume fences for placeholders. Returns the new body, the
+    placeholder for the front-matter volume (or ""), and whether there is any."""
+    def fence(m: re.Match) -> str:
+        label = f"{where} (```volume fence)"
+        try:
+            spec = yaml.safe_load(m.group(1))
+        except yaml.YAMLError as e:
+            raise SystemExit(f"{label}: volume: not valid YAML — {e}") from None
+        return "\n" + volume_div(spec, label) + "\n"
+
+    body, n = _VOLUME_FENCE_RE.subn(fence, body)
+    head = volume_div(meta["volume"], f"{where} (front-matter)") if meta.get("volume") else ""
+    return body, head, bool(n or head)
 
 
 def _short_hash(data: bytes, n: int = 10) -> str:
@@ -171,6 +242,15 @@ def discover_pages() -> list[dict]:
     for md_path in sorted(CONTENT_DIR.glob("*.md")):
         meta, body = parse_front_matter(md_path.read_text())
         slug = md_path.stem
+        body, volume_head, has_volume = place_volumes(meta, body, md_path.name)
+        body_html = render_markdown(body)
+        if volume_head:  # under the chapter title, or first if there is none
+            body_html, placed = _H1_CLOSE_RE.subn(
+                lambda m: f"{m.group(0)}\n{volume_head}", body_html, count=1
+            )
+            if not placed:
+                body_html = f"{volume_head}\n{body_html}"
+        ai_generated = bool(meta.get("ai_generated"))
         pages.append(
             {
                 "slug": slug,
@@ -181,8 +261,10 @@ def discover_pages() -> list[dict]:
                 "part": meta.get("part", ""),
                 "nav_order": meta.get("nav_order", 9999),
                 "hide_from_toc": bool(meta.get("hide_from_toc")),
-                "interactive": bool(meta.get("interactive")),
-                "body_html": Markup(render_markdown(body)),
+                "interactive": bool(meta.get("interactive")) or has_volume,
+                "ai_generated": ai_generated,
+                "has_ai": ai_generated or bool(_AI_CLASS_RE.search(body_html)),
+                "body_html": Markup(body_html),
                 # Directory-style clean URLs (`/slug/`) so the same links work
                 # under `python3 -m http.server` and on GitHub Pages alike.
                 "url": "/" if slug == "index" else f"/{slug}/",

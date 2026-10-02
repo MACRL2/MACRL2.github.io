@@ -55,8 +55,8 @@ Committed, project-relevant items:
 | `static/demo-kit/` | Reusable demo framework: `kit.js`, `theme.js`, `sim.js`, `plot.js`, `controls.js`, `diagram.js`, `linalg.js`. Rarely changes. |
 | `static/demos/` | Individual demo modules (`cartpole-*.js`) + shared pure physics (`cartpole-dynamics.js`). **Where you add new demos.** |
 | `static/vendor/katex/` | Vendored KaTeX (css/js + `contrib/auto-render.min.js` + fonts). No CDN. Loaded only on interactive pages. |
-| `tests/*.test.mjs` | Committed Node unit tests (38 tests: `integrate`, `linalg`, `plot`, `cartpole-dynamics`, `robot-learning-map-data`, `autonomy-radar-data`). `node --test tests/`. |
-| `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check) plus the self-checking `autonomy-radar.html` and `robot-learning-map.html` (they drive the demo and print PASS/FAIL; each mounts into a plain div, **not** a `.demo` one, or `kit.js` would mount a second copy on top). No `sim.html`/`linalg.html`. |
+| `tests/*.test.mjs` | Committed Node unit tests (`integrate`, `linalg`, `plot`, `cartpole-dynamics`, `robot-learning-map-data`, `autonomy-radar-data`, `volume-math`, `capability-volume-spec`, …). `node --test tests/`. |
+| `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check) plus the self-checking `autonomy-radar.html`, `capability-volume.html` and `robot-learning-map.html` (they drive the demo and print PASS/FAIL; each mounts into a plain div, **not** a `.demo` one, or `kit.js` would mount a second copy on top). No `sim.html`/`linalg.html`. |
 | `tests/browser/*.mjs` | Committed puppeteer smoke/screenshot harnesses (`smoke`, `live`, `shot`, `shot-page`). Need a one-time `npm install`. See "Verifying a change". |
 | `package.json`, `package-lock.json` | Declare + pin the puppeteer dev dependency for the browser harnesses. `npm test` → unit tests; `npm run smoke` → browser smoke. |
 | `tools/bc-lab/` | PyTorch training for the driving-lab chapters (BC + DAgger): dataset exporter, `train_bc.py`, `run_dagger.mjs` + `train_round.py`; exports the committed `static/demos/{bc-weights,dagger-run}.json`. **Not** a site/CI dependency — see its README. |
@@ -94,6 +94,8 @@ optional), read by `discover_pages()`:
 | `nav_order` | int | `9999` | Sort key; smaller sorts earlier. Ties break on `title.lower()`. |
 | `hide_from_toc` | bool | `false` | Build the page but keep it out of the TOC and prev/next nav. |
 | `interactive` | bool | `false` | Load KaTeX auto-render **and** the demo kit on this page. |
+| `ai_generated` | bool | `false` | Tint the whole page as AI-generated text and show the legend. See "Marking AI-generated text". |
+| `volume` | mapping | none | This unit's capability-volume figure, drawn under the chapter's `# title`. Also turns on `interactive`. See "A capability volume per unit". |
 
 Any other key is silently ignored. The chapter number shown in the TOC is a
 build-time 1-based position among visible pages — **not** `nav_order` and **not**
@@ -172,6 +174,38 @@ hand-maintained. `data-params` on a `.demo` div is parsed as JSON and passed to
 the demo (see below); it is supported but not used by any current chapter, so
 the reference is `kit.js`'s `parseParams()`.
 
+### Marking AI-generated text
+
+Text written by an AI model is tinted violet (`--ai-fg` in `styles.css`), and
+any page with tinted text gets a one-line legend above the article. **Tag it
+when you commit it.** If an agent drafted the prose, the tag goes in with the
+prose. There are three granularities:
+
+```markdown
+---
+ai_generated: true        # the whole page
+---
+
+<div class="ai">
+
+A run of **Markdown**: headings, lists, callouts, math. The blank lines
+inside the div are required, or Mistune treats the contents as raw HTML.
+
+</div>
+
+A human sentence with <span class="ai">an AI-written phrase</span> in it.
+```
+
+Raw-HTML blocks take the class directly (`<p class="ai">` inside a callout).
+Blocks on an otherwise human page also get a violet margin rule, so the mark
+doesn't depend on color alone. Demos inside tagged text keep their normal ink.
+The build (`_AI_CLASS_RE` in `build.py`) detects any `ai` class token to decide
+whether a page shows the legend.
+
+The initial tags came from git: text in commits with a Claude
+`Co-Authored-By` trailer. Commits without that trailer were left untagged, so
+the absence of a tint is not a guarantee.
+
 ## Adding an interactive demo
 
 **Registry pattern:** `kit.js` loads once per interactive page (as an ES
@@ -242,48 +276,119 @@ Templates to copy from: `cartpole-diagram.js` (simplest, SVG), `cartpole-sim.js`
 
 ## The landing-page radar
 
-`content/index.md` is a framing page, not a chapter. It opens on two qualities —
-**Task Complexity** and **System Autonomy** — and mounts `autonomy-radar`: a
-radar whose axes split. Click an axis and it opens into the two axes it stood
-for; left alone it splits and folds on its own, endlessly.
+`content/index.md` is a framing page, not a chapter. It opens on two qualities,
+**Task Complexity** and **System Autonomy**, and mounts `autonomy-radar`: a wheel
+of **open-ended** axes (no rim and no outer ring; each spoke fades off the
+canvas) with one **fixed volume of capability** laid over them. The point it
+makes, and that every unit's figure repeats: systems move capability between
+axes, they do not grow it.
 
+- **Only systems get a volume** — π0, ANYmal parkour, Atlas parkour, Waymo
+  Driver: built robots, not methods. (A method as an idea is unbounded; "RL"
+  encloses everything given an unlimited budget.)
+- **Every system encloses the same area.** `volume-math.js` rescales each shape
+  to one area, so readings only say *where* a system's volume sits. Dragging a
+  handle outward solves, in closed form, for how much every other spoke must
+  give up; an axis can only be pushed as far as giving up everything else
+  allows (`reachOf`, shown in the handle tooltip).
+- Left alone it **tours** the systems, morphing one volume into the next at
+  constant area, with the previous one left dashed. *All at once* overlays them.
+  Click a spoke to split that axis; click the small lineage arc at the hub to
+  fold a family back. It opens on the named axes (`namedFrontier()`).
+
+Files:
+
+- `static/demos/volume-math.js` — **pure**, no imports. The shape is a closed
+  curve through one radius per spoke, smoothstep-blended between spokes, so its
+  area is an exact quadratic form in the radii: `areaOf`, `fitTo` (rescale to an
+  area), `solveSpoke` (the drag), `reachOf`, `morph` (constant area at every
+  step), `curveOf` (points to draw). Shared with the per-unit figures.
 - `static/demos/autonomy-radar-data.js` — **pure** (Node-importable). An axis id
   *is* its path (`sa` → `sa.1` → `sa.1.2`), so any axis not listed in `AXES` is
   synthesized on demand and shows as its code (`SA.1.2`). **To name an axis, add
   one line to `AXES` keyed by its id** — nothing else changes, and the codes stay
-  valid. Also holds `visibleAxes` / `openGroups` (what is drawn, and which
-  families are open), `angleFor` / `angleDelta`, `hueOf` / `colorOf` (a family
-  keeps its hue, siblings split it by a gap that halves each level), and
-  `METHODS` — see below.
-- `static/demos/autonomy-radar.js` — the mount fn: canvas wheel, the split/fold
-  tween, lineage arcs outside the rim (click one to fold that family), the
-  method silhouettes and their draggable handles, hover tooltip, the code
-  inventory under the chart, and the automatic cycle.
-- `MAX_DEPTH` (data module) caps how deep the tree goes; `BEAT` / `TWEEN` /
-  `MAX_AXES` (demo module) pace the automatic cycle. Pass
-  `data-params='{"autoplay": false}'` to mount it still, or
-  `'{"methods": ["rl"]}'` to open with only one silhouette shown.
+  valid. Also holds `visibleAxes` / `openGroups`, `angleFor` / `angleDelta`,
+  `hueOf` / `colorOf` (lineage color), `axisFor(nameOrId)` (how unit figures
+  find a wheel axis), and `SYSTEMS` — see below.
+- `static/demos/autonomy-radar.js` — the mount fn: canvas wheel, split/fold
+  tween, hub lineage arcs, the volume and its handles, the tour, hover tooltip,
+  the inventory under the chart (each axis's share of the focused system's
+  volume, ×even spread). `TWEEN` / `MORPH` / `HOLD` pace it. Params:
+  `{"autoplay": false}` (no tour), `{"systems": ["pi0", "anymal"]}`,
+  `{"focus": "atlas"}`, `{"expanded": ["tc", "sa"]}`, `{"compare": true}`.
 
-**Methods on the wheel.** `METHODS` in the data module holds one entry per
-method (`vla`, `rl`) — `label`, `full`, `hue`, `blurb`, and `scores`: readings in
-`[0,1]` keyed by axis id, stored at whatever depth the claim was made at. Every
-other axis is derived by three rules, which is what lets the wheel split to any
-depth and still draw a closed silhouette:
+**Systems on the wheel.** `SYSTEMS` holds one entry per system — `label`,
+`full`, `method`, `hue` (swatch and compare-mode outline only; the volume itself
+is drawn in plain ink), `blurb`, and `scores`: **relative weights**, positive
+and unbounded, keyed by axis id at whatever depth the claim was made. Only the
+shape matters; doubling every reading changes nothing. Every other axis is
+derived by three rules:
 
 1. an axis with a stored reading uses it;
-2. an axis with readings *below* it averages its two children — so splitting an
-   axis never moves a silhouette by itself;
+2. an axis with readings *below* it averages its two children;
 3. anything else inherits the nearest scored ancestor.
 
 `readingOf(scores, id)` applies them; `setReading(scores, id, v)` is the drag —
-pure, and it drops the readings underneath `id`, so the handle lands exactly
-where it was let go and everything finer inherits it. Handles take the pointer
-before the axis does (within `GRAB` px), so **click the rim affordance or the
-label to split a spoke**, not its middle.
+pure, and it drops the readings underneath `id`. After a drag the readings are
+rescaled to average 1 on screen (`rescaleReadings`), which changes no shape.
+Handles take the pointer before the axis does (within `GRAB` px).
 
 The loop for re-arguing a placement mirrors the projection map's: open the page,
 drag handles, hit **copy readings**, paste the exported block over `scores` in
-`METHODS`. Problems (loco-manipulation) come next, on the same wheel.
+`SYSTEMS`. To add a system, add an entry to `SYSTEMS` and its id to
+`SYSTEM_IDS`. Problems (loco-manipulation) come next, on the same wheel.
+
+## A capability volume per unit
+
+Every unit carries a small, quiet version of the landing figure, drawn on **just
+the axes its new approach moves along**: the approach it starts from dashed, the
+one it introduces filled, both at the same volume. The caption is generated
+("same volume, moved toward *X* · away from *Y*"). Configure it in the chapter's
+front-matter, and it is drawn under the `# title`:
+
+```yaml
+volume:
+  from: Behavior cloning          # optional: the approach the unit starts from
+  to: DAgger                      # optional: the approach it introduces
+  axes:                           # clockwise from the top, 2 or more
+    Distribution shift: [0.45, 1.7]   # [before, after], relative weights
+    Horizon: [0.6, 1.35]              # a wheel axis by name → its name and color
+    Expert independence: [1.7, 0.4]
+    Compute: 1                        # one number = unchanged
+  note: optional line that replaces the generated caption
+```
+
+For a section, put the same YAML in a fenced block where the figure should go:
+
+````markdown
+## 4. Adversarial imitation
+
+```volume
+from: Deep IRL
+to: Adversarial imitation
+axes:
+  Auditable reward: [1.6, 0.4]
+  Direct policy: [0.6, 1.5]
+```
+````
+
+- Values are relative weights. Both shapes are rescaled to the same area, so a
+  figure **cannot** show capability growing: scaling every axis up does nothing,
+  and only the proportions count.
+- An axis named like a wheel axis (`Horizon`, any case) or given by id
+  (`tc.2.1`) borrows the wheel's name and lineage color. Anything else is a
+  free-standing unit axis.
+- `build.py` (`place_volumes` / `volume_div`) validates each spec and **fails
+  the build** on a malformed one, naming the file. Either form makes the page
+  `interactive`. Both become
+  `<div class="demo" data-demo="capability-volume" data-params='…'>`, which can
+  also be written by hand.
+- `static/demos/capability-volume-spec.js` (**pure**) parses the spec and
+  works out the caption (`unitVolume`, `movesOf`).
+  `static/demos/capability-volume.js` draws the SVG and morphs dashed → filled as
+  it scrolls into view (click to replay).
+- The current per-unit readings are first drafts: cart-pole, two branches,
+  behavior cloning, DAgger, inverse RL, plus the adversarial-imitation section.
 
 ## The projection map
 
@@ -316,9 +421,11 @@ exported `SYSTEMS` block over the one in the data file.
 node --test tests/
 ```
 
-38 tests across `integrate`, `linalg`, `plot`, `cartpole-dynamics`,
-`robot-learning-map-data` (projection math) and `autonomy-radar-data`
-(the radar's axis tree, angles, lineage color, and the method readings);
+Tests across `integrate`, `linalg`, `plot`, `cartpole-dynamics`,
+`robot-learning-map-data` (projection math), `autonomy-radar-data`
+(the radar's axis tree, angles, lineage color, and the system readings),
+`volume-math` (the fixed-volume geometry) and `capability-volume-spec` (the
+per-unit figure's spec and caption), among others;
 ~70ms. A
 harmless `MODULE_TYPELESS_PACKAGE_JSON` warning prints. **Do NOT run `npm test`**
 — it is a stub that errors.

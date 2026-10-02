@@ -5,6 +5,14 @@ nav_order: 40
 part: "Part II — Branch B · Learning to Control"
 summary: The concrete anchor for Branch B — design a controller from a model, watch it balance, then throw the model away and let it learn.
 interactive: true
+volume:
+  from: Pole placement
+  to: Random search
+  axes:
+    Unknown dynamics: [0.4, 1.8]
+    Guarantees: [1.8, 0.45]
+    Sample efficiency: [1.6, 0.55]
+    Self-supervising: [0.4, 1.4]
 ---
 
 # Balancing on a Knife's Edge

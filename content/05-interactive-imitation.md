@@ -5,6 +5,15 @@ nav_order: 36
 part: "Part II — Branch A · Learning from Demonstrations"
 summary: Put the labels where your policy actually drives and the quadratic blow-up becomes linear — the fix is an online-learning theorem wearing a driving glove.
 interactive: true
+ai_generated: true
+volume:
+  from: Behavior cloning
+  to: DAgger
+  axes:
+    Distribution shift: [0.45, 1.7]
+    Horizon: [0.6, 1.35]
+    Expert independence: [1.7, 0.4]
+    Safe data collection: [1.5, 0.6]
 ---
 
 # The Expert in the Passenger Seat
