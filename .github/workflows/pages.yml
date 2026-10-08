@@ -6,11 +6,11 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    # rohan/dm-frameworks refreshes the branch preview (see the preview steps
-    # below). Note: the trigger only fires once that branch contains this
-    # workflow file — until it merges main, refresh the preview via a push to
-    # main or workflow_dispatch.
-    branches: [main, rohan/dm-frameworks]
+    # The preview branches refresh their previews (see the preview steps
+    # below). Note: a branch's trigger only fires once that branch contains
+    # this workflow file — until it merges main, refresh the preview via a
+    # push to main or workflow_dispatch.
+    branches: [main, rohan/dm-frameworks, than/dm-frameworks]
   workflow_dispatch:
 
 permissions:
@@ -64,6 +64,33 @@ jobs:
         run: |
           mkdir -p dist/preview
           cp -r _preview/dist dist/preview/dm-frameworks
+      # ------------------------------------------------------------------------
+
+      # --- One-off branch preview: than/dm-frameworks -------------------------
+      # Same recipe, served at /preview/than/. Also rewrites url("/…") in CSS,
+      # which this branch uses for author portraits. Delete with its trigger
+      # above once the branch merges.
+      - uses: actions/checkout@v7
+        with:
+          ref: than/dm-frameworks
+          path: _preview_than
+      - name: Build than preview
+        run: python3 build.py
+        working-directory: _preview_than
+      - name: Rewrite than preview URLs to subpath
+        run: |
+          find _preview_than/dist -name '*.html' -print0 | xargs -0 sed -i \
+            -e 's|href="/|href="/preview/than/|g' \
+            -e 's|src="/|src="/preview/than/|g'
+          find _preview_than/dist -name '*.js' -print0 | xargs -0 sed -i \
+            -e "s|'/static/|'/preview/than/static/|g" \
+            -e 's|`/static/|`/preview/than/static/|g'
+          find _preview_than/dist -name '*.css' -print0 | xargs -0 sed -i \
+            -e 's|url("/|url("/preview/than/|g'
+      - name: Add than preview to site
+        run: |
+          mkdir -p dist/preview
+          cp -r _preview_than/dist dist/preview/than
       # ------------------------------------------------------------------------
 
       - name: Disable Jekyll processing
