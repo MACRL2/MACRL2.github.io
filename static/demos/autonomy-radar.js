@@ -2,8 +2,8 @@
 // fixed volume of capability that systems can only move around them.
 //
 // Two roots (Task Complexity, System Autonomy) radiate from a hub and never
-// stop: each spoke fades out instead of meeting a rim, because none of these
-// axes has a ceiling. Click an axis and it splits into its two children; the
+// stop: each spoke is a ray — a point at the origin, an outward arrowhead, then
+// a fade instead of a rim, because none of these axes has a ceiling. Click an axis and it splits into its two children; the
 // family it came from is marked by a short arc around the hub (click the arc
 // to fold it back). Color carries lineage, as before.
 //
@@ -32,7 +32,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const times = (v) => `×${v.toFixed(1)}`;
-const seeThrough = (oklch) => oklch.replace(/\)\s*$/, ' / 0)');
+const withAlpha = (oklch, a) => oklch.replace(/\)\s*$/, ` / ${a})`);
 const REDUCED = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function mount(el, params, ctx) {
@@ -282,33 +282,51 @@ function mount(el, params, ctx) {
     const hubR = hubRadius();
     const far = Math.hypot(W, H) / 2;
 
-    // Spokes: no rim, no outer ring. Each fades along its length and runs off
-    // the canvas, with faint ticks at multiples of the even spread.
-    g.lineCap = 'round';
+    // Spokes are rays, not lines through the hub. With no rim to say "radius",
+    // two opposite spokes drawn as plain strokes fuse into one line — one axis
+    // with a negative end — which is exactly the wrong reading. So each starts
+    // as a point at the origin, faint, and widens and darkens outward to its
+    // label before fading off the canvas: more is always away from the hub.
     for (const id of [...anim.keys()].sort((a, b) => (a === hover ? 1 : b === hover ? -1 : 0))) {
       const a = anim.get(id);
       if (a.alpha <= 0.01) continue;
       const on = id === hover;
       const col = colorOf(id, dark);
+      const c = Math.cos(a.angle), sn = Math.sin(a.angle);
+      const w1 = (on ? 4.4 : 3) / 2, w2 = w1 * 1.3;    // half-widths at the label and at the edge
       const [x0, y0] = at(a.angle, hubR);
-      const [x1, y1] = at(a.angle, far);
-      const grad = g.createLinearGradient(x0, y0, x1, y1);
-      grad.addColorStop(0, col);
-      grad.addColorStop(Math.min(0.95, LR / far), col);
-      grad.addColorStop(1, seeThrough(col));          // same hue at zero alpha, not black
+      const [x2, y2] = at(a.angle, far);
+      const grad = g.createLinearGradient(x0, y0, x2, y2);
+      grad.addColorStop(0, withAlpha(col, 0.25));
+      grad.addColorStop(clamp((LR - hubR) / (far - hubR), 0.05, 0.95), col);
+      grad.addColorStop(1, withAlpha(col, 0));         // same hue at zero alpha, not black
       g.globalAlpha = a.alpha * (on ? 1 : 0.85);
-      g.strokeStyle = grad;
-      g.lineWidth = on ? 2.6 : 1.5;
-      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
-      g.fillStyle = col;
-      for (let k = 1; k * rho < far; k++) {
-        const fade = 1 - (k * rho) / far;
-        g.globalAlpha = a.alpha * 0.55 * fade;
-        const [tx, ty] = at(a.angle, k * rho);
-        g.beginPath(); g.arc(tx, ty, 1.6, 0, TAU); g.fill();
-      }
+      g.fillStyle = grad;
+      g.beginPath();
+      g.moveTo(x0, y0);
+      g.lineTo(cx + c * LR - sn * w1, cy + sn * LR + c * w1);
+      g.lineTo(cx + c * far - sn * w2, cy + sn * far + c * w2);
+      g.lineTo(cx + c * far + sn * w2, cy + sn * far - c * w2);
+      g.lineTo(cx + c * LR + sn * w1, cy + sn * LR - c * w1);
+      g.closePath();
+      g.fill();
+      // an open arrowhead just short of the label, as on every unit's figure:
+      // all spokes get one, so none reads as the negative end of another
+      const tip = LR - 12, len = on ? 7 : 6, wid = on ? 4.6 : 4;
+      g.strokeStyle = col; g.lineWidth = on ? 1.8 : 1.4;
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      g.beginPath();
+      g.moveTo(cx + c * (tip - len) - sn * wid, cy + sn * (tip - len) + c * wid);
+      g.lineTo(cx + c * tip, cy + sn * tip);
+      g.lineTo(cx + c * (tip - len) + sn * wid, cy + sn * (tip - len) - c * wid);
+      g.stroke();
       g.globalAlpha = 1;
     }
+    // the origin every spoke leaves from
+    g.fillStyle = t.fg; g.globalAlpha = 0.7;
+    g.beginPath(); g.arc(cx, cy, 2.4, 0, TAU); g.fill();
+    g.globalAlpha = 1;
+    g.lineCap = 'round';
 
     // Lineage arcs, tucked around the hub — the families the axes came from.
     // The span comes from the live gap to the neighbouring family, so a new

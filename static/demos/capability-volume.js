@@ -1,8 +1,8 @@
 // capability-volume.js — the small figure each unit carries: the same volume,
 // moved.
 //
-// Only the axes the unit's new approach moves along are drawn, open-ended — they
-// fade out instead of stopping at a rim. The approach the unit starts from is a
+// Only the axes the unit's new approach moves along are drawn, as open rays from
+// one origin, each ending in an arrowhead — no rim. The approach the unit starts from is a
 // dashed outline; the one it introduces is the filled shape, and both are drawn
 // at exactly the same volume (volume-math.js), so the figure can only ever show
 // capability moving from some axes to others. As it scrolls into view the
@@ -56,7 +56,6 @@ function mount(el, params, ctx) {
   const before = fitTo(angles, vol.axes.map((a) => a.before), area);
   const after = fitTo(angles, vol.axes.map((a) => a.after), area);
   const LR = peak * rho + 13;                            // labels, all on one radius
-  const far = LR + 46;                                   // where a spoke has faded out
 
   const summary = [
     gains.length ? `toward ${gains.join(', ')}` : '',
@@ -93,46 +92,45 @@ function mount(el, params, ctx) {
   const moves = svg.querySelector('.cvol-moves');
   const afterPath = svg.querySelector('.cvol-after');
 
-  // Spokes: open-ended. Each fades along its own length, so nothing closes the
-  // figure; a few faint ticks at multiples of the even spread say "it goes on".
+  // Spokes are rays, each its own direction: a thin line out of the origin,
+  // darkening as it goes, ending in an open arrowhead just short of its label —
+  // the usual mark for an axis that keeps going. All of them get one, which is
+  // the point: an x–y cross puts arrows on the positive ends only, so plain
+  // strokes made two opposite spokes read as one axis with a negative side.
+  const R0 = 5;                                          // where a spoke leaves the origin
+  const TIP = LR - 2;                                    // where it ends, pointing at its label
+  const head = (c, s, r, len, wid) =>
+    `M${(c * (r - len) - s * wid).toFixed(2)} ${(s * (r - len) + c * wid).toFixed(2)}` +
+    `L${(c * r).toFixed(2)} ${(s * r).toFixed(2)}` +
+    `L${(c * (r - len) + s * wid).toFixed(2)} ${(s * (r - len) - c * wid).toFixed(2)}`;
   angles.forEach((a, i) => {
-    const [ex, ey] = [Math.cos(a) * far, Math.sin(a) * far];
+    const c = Math.cos(a), s = Math.sin(a);
     const grad = svgEl('linearGradient', {
-      id: `${id}-g${i}`, gradientUnits: 'userSpaceOnUse', x1: 0, y1: 0, x2: ex.toFixed(2), y2: ey.toFixed(2),
+      id: `${id}-g${i}`, gradientUnits: 'userSpaceOnUse',
+      x1: (c * R0).toFixed(2), y1: (s * R0).toFixed(2), x2: (c * TIP).toFixed(2), y2: (s * TIP).toFixed(2),
     });
     grad.append(
-      svgEl('stop', { offset: '0', class: 'cvol-stop', 'stop-opacity': '0.9' }),
-      svgEl('stop', { offset: '0.55', class: 'cvol-stop', 'stop-opacity': '0.55' }),
-      svgEl('stop', { offset: '1', class: 'cvol-stop', 'stop-opacity': '0' }),
+      svgEl('stop', { offset: '0', class: 'cvol-stop', 'stop-opacity': '0.3' }),
+      svgEl('stop', { offset: '1', class: 'cvol-stop', 'stop-opacity': '1' }),
     );
     defs.append(grad);
     spokes.append(svgEl('line', {
-      x1: (Math.cos(a) * 3).toFixed(2), y1: (Math.sin(a) * 3).toFixed(2),
-      x2: ex.toFixed(2), y2: ey.toFixed(2), stroke: `url(#${id}-g${i})`, class: 'cvol-spoke',
+      x1: (c * R0).toFixed(2), y1: (s * R0).toFixed(2), x2: (c * (TIP - 0.6)).toFixed(2), y2: (s * (TIP - 0.6)).toFixed(2),
+      stroke: `url(#${id}-g${i})`, class: 'cvol-spoke',
     }));
-    for (let k = 1; k * rho < far - 8; k++) {
-      spokes.append(svgEl('circle', {
-        cx: (Math.cos(a) * k * rho).toFixed(2), cy: (Math.sin(a) * k * rho).toFixed(2), r: 0.9,
-        class: 'cvol-tick', opacity: (0.75 * (1 - (k * rho) / far)).toFixed(2),
-      }));
-    }
+    spokes.append(svgEl('path', { d: head(c, s, TIP, 4.2, 2.6), class: 'cvol-head' }));
   });
+  spokes.append(svgEl('circle', { cx: 0, cy: 0, r: 1.6, class: 'cvol-origin' }));
 
-  // Where the volume went: a short stroke along each spoke that moved, from the
-  // dashed shape to the filled one, with a chevron pointing the way it went.
+  // Where the volume went: the stretch of each spoke between the dashed shape
+  // and the filled one, inked in — accent where it grew, muted where it paid.
   rows.forEach((r, i) => {
     if (Math.abs(r.now - r.was) * rho < 3) return;
     const a = angles[i], c = Math.cos(a), s = Math.sin(a);
-    const r0 = before[i], r1 = after[i], dir = Math.sign(r1 - r0);
-    const g = svgEl('g', { class: `cvol-move ${dir > 0 ? 'is-gain' : 'is-pay'}` });
+    const r0 = before[i], r1 = after[i];
+    const g = svgEl('g', { class: `cvol-move ${r1 > r0 ? 'is-gain' : 'is-pay'}` });
     g.append(svgEl('line', {
       x1: (c * r0).toFixed(2), y1: (s * r0).toFixed(2), x2: (c * r1).toFixed(2), y2: (s * r1).toFixed(2),
-    }));
-    const tip = [c * r1, s * r1], back = [-c * dir * 3.2, -s * dir * 3.2], side = [-s * 2.6, c * 2.6];
-    g.append(svgEl('path', {
-      d: `M${(tip[0] + back[0] + side[0]).toFixed(2)} ${(tip[1] + back[1] + side[1]).toFixed(2)}` +
-         `L${tip[0].toFixed(2)} ${tip[1].toFixed(2)}` +
-         `L${(tip[0] + back[0] - side[0]).toFixed(2)} ${(tip[1] + back[1] - side[1]).toFixed(2)}`,
     }));
     g.style.opacity = '0';
     moves.append(g);
@@ -143,7 +141,7 @@ function mount(el, params, ctx) {
     labels.replaceChildren(...vol.axes.map((ax, i) => {
       const a = angles[i], c = Math.cos(a), s = Math.sin(a);
       const t = svgEl('text', {
-        x: (c * LR).toFixed(2), y: (s * LR).toFixed(2), class: 'cvol-label',
+        x: (c * (LR + 3)).toFixed(2), y: (s * (LR + 3)).toFixed(2), class: 'cvol-label',
         'text-anchor': c > 0.3 ? 'start' : c < -0.3 ? 'end' : 'middle',
         'dominant-baseline': Math.abs(c) > 0.3 ? 'central' : s > 0 ? 'hanging' : 'auto',
       });

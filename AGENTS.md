@@ -283,6 +283,12 @@ canvas) with one **fixed volume of capability** laid over them. The point it
 makes, and that every unit's figure repeats: systems move capability between
 axes, they do not grow it.
 
+Every spoke is drawn as a **ray**: it tapers to a point at a marked origin and
+ends in an outward arrowhead before its label, here and on every unit's figure.
+Without a rim, plain strokes let two opposite spokes fuse into one line that
+read as a single axis with a negative end; an arrowhead on every spoke (not
+just the "positive" ones, as on an x–y cross) is what keeps them separate.
+
 - **Only systems get a volume** — π0, ANYmal parkour, Atlas parkour, Waymo
   Driver: built robots, not methods. (A method as an idea is unbounded; "RL"
   encloses everything given an unlimited budget.)

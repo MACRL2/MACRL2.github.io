@@ -10,7 +10,7 @@ interactive: true
 
 Robotics, or "physical Artificial Intelligence (AI)", is perhaps the oldest field of AI research. Its history goes as far as [4th century BC](https://en.wikipedia.org/wiki/Automaton). As we experience inherent wonder about the world and beyond, so too do we experience wonder about the internal gears which drive us and others we know.
 
-As this field's markets try to convince you that its resolution is near, we implore readers to think deeply about its history and where we are now. What has _truly_ changed? What were the catalysts of flight? of vaccines? of space exploration?
+While this field's markets try to convince you that its resolution is near, we implore readers to think deeply about its history and where we are now. What has _truly_ changed? What were the catalysts of flight? of vaccines? of space exploration?
 
 Familiar to those in Machine Learning (ML), the <strong>No Free Lunch</strong> theorem contends: 
 
