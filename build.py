@@ -43,6 +43,11 @@ AI-generated text
     blank-line-padded `<div class="ai">` … `</div>`, or a phrase with
     `<span class="ai">`. The legend appears on any page with a tag.
 
+Margin definitions
+------------------
+    Write a term as <dfn data-def="Its definition.">term</dfn> and the
+    definition is set in the right margin beside that line.
+
 Run
 ---
     make site       # or:  python3 build.py
@@ -110,8 +115,35 @@ def render_markdown(body: str) -> str:
 
     protected = _MATH_DISPLAY_RE.sub(_mask, body)
     protected = _MATH_INLINE_RE.sub(_mask, protected)
-    html = _MD(protected)
+    html = _definitions(_MD(protected))
     return _MATH_TOKEN_RE.sub(lambda m: stash[int(m.group(1))], html)
+
+
+# Margin definitions: <dfn data-def="…">term</dfn> keeps the term in the text
+# and sets the definition beside it in the right margin. Narrow screens have no
+# margin, so each paragraph's definitions are repeated in a note after it; CSS
+# shows one copy or the other. The definition is attribute text, so it is
+# already escaped; math tokens inside it are restored afterwards.
+_DFN_RE = re.compile(r'<dfn data-def="([^"]*)">(.*?)</dfn>', re.DOTALL)
+_DFN_PARA_RE = re.compile(r"<p>((?:(?!</p>).)*?<dfn data-def=.*?)</p>", re.DOTALL)
+
+
+def _def_note(term: str, definition: str) -> str:
+    return f'<span class="def-term">{term}</span> {definition}'
+
+
+def _margin_definition(m: re.Match) -> str:
+    return (f'<dfn>{m.group(2)}</dfn>'
+            f'<span class="def" role="note">{_def_note(m.group(2), m.group(1))}</span>')
+
+
+def _definitions(html: str) -> str:
+    def para(m: re.Match) -> str:
+        notes = "".join(f'<span class="def-after-item">{_def_note(t, d)}</span>'
+                        for d, t in _DFN_RE.findall(m.group(1)))
+        return (f"<p>{_DFN_RE.sub(_margin_definition, m.group(1))}</p>"
+                f'<p class="def-after" role="note">{notes}</p>')
+    return _DFN_RE.sub(_margin_definition, _DFN_PARA_RE.sub(para, html))
 
 
 # A unit's capability volume (static/demos/capability-volume.js): the axes its

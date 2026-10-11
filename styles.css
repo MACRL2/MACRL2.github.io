@@ -473,6 +473,37 @@ section > h2 {
   border-left: 2px solid var(--ai-rule);
 }
 
+/* Display math wider than the column (two equations side by side, on a
+   phone) scrolls sideways in its own box instead of past the page edge. */
+.katex-display { overflow-x: auto; overflow-y: hidden; padding-block: 0.15em; }
+
+/* Claude as the author of AI-written text: its mark hangs in the left margin
+   beside each AI block, where a human author's portrait goes (see .by),
+   and sits in the legend so the mark is explained. The mark is a stand-in
+   starburst in Claude's orange; swap --claude-mark for an official asset. */
+:root {
+  --claude-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cpath d='M2.51 0.67L10.14 2.72M1.84 1.84L5.80 5.80M0.67 2.51L2.72 10.14M-0.67 2.51L-2.12 7.92M-1.84 1.84L-7.42 7.42M-2.51 0.67L-7.92 2.12M-2.51 -0.67L-10.14 -2.72M-1.84 -1.84L-5.80 -5.80M-0.67 -2.51L-2.72 -10.14M0.67 -2.51L2.12 -7.92M1.84 -1.84L7.42 -7.42M2.51 -0.67L7.92 -2.12' stroke='%23D97757' stroke-width='2.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+}
+.ai-legend::before {
+  content: ""; display: inline-block; width: 1em; height: 1em;
+  margin-right: 0.4em; vertical-align: -0.15em;
+  background: var(--claude-mark) center / contain no-repeat;
+}
+.page-content:not(.ai) .ai:not(span) { position: relative; }
+.page-content:not(.ai) .ai:not(span)::before {
+  content: ""; float: left;
+  width: 1.1rem; height: 1.1rem; margin: 0.3rem 0.5rem 0 0;
+  background: var(--claude-mark) center / contain no-repeat;
+}
+@media (min-width: 64rem) {
+  /* Centred on the same column as the author portrait: the block starts
+     0.85rem left of the text (its rule), the portrait column 4.25rem. */
+  .page-content:not(.ai) .ai:not(span)::before {
+    float: none; position: absolute; top: 0.35rem;
+    left: calc(-4.25rem + 0.85rem + 0.7rem); width: 1.6rem; height: 1.6rem; margin: 0;
+  }
+}
+
 /* Demos keep their own ink: the tint is for prose, not instruments. */
 .page-content .ai .demo,
 .page-content.ai .demo { color: var(--fg); }
@@ -929,3 +960,138 @@ section > h2 {
 .cvol-moved { font-style: italic; }
 .cvol-error { font-size: 0.8rem; color: oklch(0.55 0.16 30); }
 @media (prefers-reduced-motion: reduce) { .cvol-move { transition: none; } }
+
+/* ----------------------------------------------------------------
+   Simplex introduction (static/demos/simplex-intro.js)
+   Scroll-driven: the figure sticks beside the slides and grows a
+   vertex per slide. No panel. Before the script mounts, the slides
+   read as plain paragraphs.
+---------------------------------------------------------------- */
+
+.simplex-scroll.is-live {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  margin: 1rem 0 3rem;
+}
+.simplex-fig {
+  position: sticky; top: calc(50vh - 11rem);
+  align-self: start; height: 22rem;
+}
+.simplex-fig svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.is-live .simplex-step {
+  min-height: 70vh; margin: 0;
+  display: flex; align-items: center;
+  opacity: 0.3; transition: opacity 0.3s ease;
+}
+.is-live .simplex-step:first-child { min-height: 60vh; }
+.is-live .simplex-step:last-child { min-height: 60vh; }
+.is-live .simplex-step.is-active { opacity: 1; }
+/* The scatter and shift slides are long, so the systems have room to
+   spread, shift and gather again; their text stays pinned mid-screen
+   while that plays out. */
+.is-live .simplex-step:is([data-scatter], [data-shift]) { display: block; min-height: 200vh; }
+.is-live .simplex-step:is([data-scatter], [data-shift]) > span {
+  display: block; position: sticky; top: calc(50vh - 2.5em);
+  margin-block: calc(50vh - 2.5em);
+}
+
+.sx-ray { stroke: var(--fg-faint); stroke-width: 1; }
+.sx-head { fill: none; stroke: var(--fg-faint); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+.sx-origin { fill: var(--accent); }
+.sx-sys-fill { fill: var(--accent); fill-opacity: 0.1; transition: fill-opacity 0.2s ease; }
+.sx-sys-edge { stroke: var(--accent); stroke-width: 1; stroke-linecap: round; }
+.sx-sys-edge.is-hidden { stroke-dasharray: 3 3; stroke-opacity: 0.7; }
+.sx-system:hover .sx-sys-fill { fill-opacity: 0.28; }
+.sx-system .sx-label { fill: var(--accent); font-style: normal; }
+.sx-system:hover .sx-label { text-decoration: underline; }
+.sx-vol-fill { fill: var(--accent); fill-opacity: 0.12; }
+.sx-vol-edge { stroke: var(--accent); stroke-width: 1.3; stroke-linecap: round; }
+.sx-vol-edge.is-hidden { stroke-width: 1; stroke-dasharray: 3 3; stroke-opacity: 0.7; }
+.sx-label {
+  font-family: var(--serif); font-size: 11px; font-style: italic;
+  fill: var(--fg-muted);
+}
+
+/* Narrow screens: one column, the figure pinned at the top. Its fill is
+   the page colour, only so slides scroll out of sight beneath it. */
+@media (max-width: 40rem) {
+  .simplex-scroll.is-live { display: block; }
+  .simplex-fig {
+    top: 0; height: 15rem; z-index: 2;
+    background: var(--bg); padding-block: 0.75rem;
+  }
+  .is-live .simplex-step { min-height: 60vh; }
+}
+@media (prefers-reduced-motion: reduce) { .is-live .simplex-step { transition: none; } }
+
+/* ----------------------------------------------------------------
+   Margin definitions: <dfn data-def="…">term</dfn> (build.py)
+   The definition floats into the right gutter beside its line; with
+   no gutter, a copy sits under the paragraph as a small note.
+---------------------------------------------------------------- */
+
+dfn { font-style: italic; }
+
+/* Narrow: the floated copy is hidden and the note after the paragraph
+   shows instead. Wide: the reverse. */
+.def { display: none; }
+.def-after {
+  margin: -0.4rem 0 1.1rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--rule);
+  font-size: 0.8rem; line-height: 1.45;
+  color: var(--fg-muted);
+}
+.def-after-item { display: block; }
+.def-term { font-style: italic; color: var(--fg); }
+
+@media (min-width: 1360px) {
+  .def-after { display: none; }
+  .def {
+    display: block; float: right; clear: right;
+    width: 13em;
+    margin: 0.15rem calc(-13em - 2.75rem) 0 0;
+    font-size: 0.8rem; line-height: 1.45; font-style: normal;
+    color: var(--fg-muted);
+  }
+}
+
+/* ----------------------------------------------------------------
+   Keyboard cart-pole (static/demos/cartpole-keys.js)
+---------------------------------------------------------------- */
+
+.cpk-stage { position: relative; height: 260px; border-radius: 8px; cursor: pointer; }
+.cpk-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cpk-stage canvas { display: block; width: 100%; height: 100%; }
+.cpk-overlay {
+  position: absolute; inset: 0.75rem 0 auto; margin: 0;
+  text-align: center; font-size: 0.9rem; font-style: italic; color: var(--fg-muted);
+  pointer-events: none;
+}
+.cpk-bar {
+  display: flex; align-items: center; justify-content: center; gap: 1rem;
+  margin-top: 0.5rem;
+}
+.cpk-time { font-variant-numeric: tabular-nums; font-size: 0.9rem; color: var(--fg-muted); min-width: 10rem; text-align: center; }
+.cpk-push { touch-action: none; user-select: none; min-width: 3rem; }
+
+/* Two demos side by side (each column: its lead-in line, then the demo);
+   stacked when there is no room. */
+.demo-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+.demo-pair > div > p:first-child { min-height: 3.2em; }
+@media (max-width: 48rem) { .demo-pair { grid-template-columns: 1fr; } }
+
+/* Driving demo (static/demos/drift-bend.js) — shares the cart-pole's stage. */
+.drift-bar { gap: 0.5rem; }
+.drift-bar .cpk-time { min-width: 9rem; font-size: 0.82rem; }
+
+/* Cart-pole prediction demo (static/demos/cartpole-predict.js) */
+.cpp { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1rem; }
+.cpp-cart, .cpp-plots { height: 240px; }
+.cpp canvas { display: block; width: 100%; height: 100%; }
+.cpp-key { margin: 0.4rem 0 0; font-size: 0.82rem; color: var(--fg-muted); }
+.cpp-solid, .cpp-dash { display: inline-block; width: 1.4rem; vertical-align: middle; margin: 0 0.3rem 0 0.6rem; }
+.cpp-solid { border-top: 2px solid var(--accent); }
+.cpp-dash { border-top: 1.5px dashed var(--fg-muted); }
+@media (max-width: 40rem) { .cpp { grid-template-columns: 1fr; } }
