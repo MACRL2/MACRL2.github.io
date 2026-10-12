@@ -11,8 +11,8 @@
 // triangle, solid. A slide marked data-scatter (the first split) breaks the
 // volume into the systems it stands for, each a volume of its own that
 // reaches differently along each ray but has the same size. On the next
-// slide (marked data-shift) each system's area shifts into the next one's
-// shape, still keeping its size, and then they merge before moving on.
+// slide (marked data-shift) each system's area in turn shifts into the next
+// one's shape, still keeping its size, and then they merge before moving on.
 
 const HALF = 150;     // px from the point to each arrowhead
 const RAY_BACK = 105; // px a ray runs behind the point, to its plain start
@@ -166,19 +166,21 @@ function draw(svg, t, scatter, shift) {
   // starts as a copy of it and stretches to its own reach on each ray, fading
   // in as the whole fades out (and the reverse, as they merge again). Reaches
   // move geometrically, so every area stays the same throughout. While they
-  // shift, each takes on the next system's reach, its label fading out and
-  // back in at the new place.
+  // shift, each in turn takes on the next system's reach, highlighted as it
+  // moves, its label fading out and back in at the new place.
   const [pa, ea] = Object.keys(STAGES[2].axes).map(id => axes.find(a => a.id === id));
   const split = scatter > 0 && pa && ea;
   volume(el('g', { opacity: split ? 1 - scatter : 1 }, svg), ox, oy, axes, 'sx-vol');
   if (split) {
-    const fade = smooth(clamp01(2 * scatter - 1)) * smooth(Math.abs(1 - 2 * shift));
     SYSTEMS.forEach(([name, href, p, e], i) => {
-      const next = SYSTEMS[(i + 1) % SYSTEMS.length], [, , , , lp, le, anchor] = shift < 0.5 ? SYSTEMS[i] : next;
-      const link = el('a', { href, target: '_blank', rel: 'noopener', class: 'sx-system' }, svg);
+      const u = smooth(clamp01(shift * SYSTEMS.length - i));   // this system's turn
+      const fade = smooth(clamp01(2 * scatter - 1)) * smooth(Math.abs(1 - 2 * u));
+      const next = SYSTEMS[(i + 1) % SYSTEMS.length], [, , , , lp, le, anchor] = u < 0.5 ? SYSTEMS[i] : next;
+      const link = el('a', { href, target: '_blank', rel: 'noopener',
+                             class: 'sx-system' + (u > 0 && u < 1 ? ' is-moving' : '') }, svg);
       volume(el('g', { opacity: scatter }, link), ox, oy,
-             [{ ...pa, fwd: reachAt(scatter, pa.fwd, reachAt(shift, p, next[2])) },
-              { ...ea, fwd: reachAt(scatter, ea.fwd, reachAt(shift, e, next[3])) }], 'sx-sys');
+             [{ ...pa, fwd: reachAt(scatter, pa.fwd, reachAt(u, p, next[2])) },
+              { ...ea, fwd: reachAt(scatter, ea.fwd, reachAt(u, e, next[3])) }], 'sx-sys');
       if (fade <= 0) return;
       const text = el('text', { x: ox + pa.dx * lp + ea.dx * le, y: oy + pa.dy * lp + ea.dy * le + 4,
                                 'text-anchor': anchor, class: 'sx-label', opacity: fade }, link);
@@ -227,15 +229,15 @@ window.Demos.register('simplex-intro', (root) => {
       t += smooth(clamp01((x[i - 1] - hold[i - 1]) / span));
     }
     // p(i): how far through slide i's hold window the viewport is, 0 to 1.
-    // The systems spread out early in the scatter slide's window, shift in
-    // the middle of the shift slide's, and gather back in at the end of the
-    // last of the two.
+    // The systems spread out early in the scatter slide's window, shift one
+    // after another through most of the shift slide's, and gather back in at
+    // the end of the last of the two.
     const p = i => i < 0 ? 0 : clamp01((x[i] + hold[i]) / (2 * hold[i]));
     const sc = steps.findIndex(s => s.hasAttribute('data-scatter'));
     const sh = steps.findIndex(s => s.hasAttribute('data-shift'));
     const end = sh >= 0 ? sh : sc;
-    const scatter = sc < 0 ? 0 : Math.min(smooth(clamp01(p(sc) / 0.3)), smooth(clamp01((1 - p(end)) / 0.25)));
-    const shift = smooth(clamp01((p(sh) - 0.1) / 0.55));
+    const scatter = sc < 0 ? 0 : Math.min(smooth(clamp01(p(sc) / 0.3)), smooth(clamp01((1 - p(end)) / 0.2)));
+    const shift = clamp01((p(sh) - 0.05) / 0.7);
     const active = Math.round(t);
     steps.forEach((s, i) => s.classList.toggle('is-active', i === active));
     const key = t + ':' + scatter + ':' + shift;
