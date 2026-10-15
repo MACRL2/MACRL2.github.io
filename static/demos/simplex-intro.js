@@ -53,6 +53,8 @@ const STAGES = [
   { axes: { C: [1, 0, 0] } },
   { axes: { S: [0.97, 0.24, MEAN_S], E: [0, -1, MEAN_E] },
     split: { S: 'C', E: 'C' } },
+  // Held through the slides that scatter and shift the systems.
+  { axes: { S: [0.97, 0.24, MEAN_S], E: [0, -1, MEAN_E] } },
   { axes: { S: [0.97, 0.24, MEAN_S], E: [0, -1, MEAN_E] } },
   { axes: { S: [0.97, 0.24, MEAN_S], EA: [-0.05, -1, 110], EB: [-0.72, 0.6, 100, -0.8] },
     split: { EA: 'E', EB: 'E' } },
@@ -206,6 +208,8 @@ function label(svg, tx, ty, dx, dy, text, opacity) {
 
 window.Demos.register('simplex-intro', (root) => {
   const steps = [...root.querySelectorAll('.simplex-step')];
+  if (steps.length !== STAGES.length)
+    console.warn(`simplex-intro: ${steps.length} slides but ${STAGES.length} stages; they pair up one to one`);
   const fig = document.createElement('div');
   fig.className = 'simplex-fig';
   const svg = el('svg', { viewBox: '0 0 420 340', role: 'img',
